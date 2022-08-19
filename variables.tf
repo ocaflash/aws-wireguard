@@ -14,7 +14,7 @@ variable "region" {
 
 variable "availability_zones" {
   description = "Region to be used for AWS resources"
-  default     = "eu-west-2a"
+  default     = ["eu-west-2a"]
 }
 
 variable "tags" {
