@@ -2,7 +2,7 @@ module "networking" {
   source  = "cn-terraform/networking/aws"
   version = "2.0.13"
 
-  name_prefix = substr(format("%s-%s", var.name, var.environment), 0, 32)
+  name_prefix = substr(format("%s-%s", var.name_prefix, var.environment), 0, 32)
 
   vpc_cidr_block                              = var.vpc_cidr_block
   availability_zones                          = var.availability_zones
@@ -12,12 +12,12 @@ module "networking" {
 }
 
 resource "aws_security_group" "wireguard" {
-  name        = "${var.name}-${var.environment}-vpn"
+  name        = "${var.name_prefix}-${var.environment}-vpn"
   description = "Communication to and from VPC endpoint"
   vpc_id      = module.networking.vpc_id
 
   tags = {
-    Name = "${var.name}-${var.environment}"
+    Name = "${}-${var.environment}"
   }
 
   ingress {
@@ -73,7 +73,7 @@ resource "aws_instance" "wireguard" {
   user_data              = data.template_file.wireguard_userdata.rendered
 
   tags = {
-    Name = "${var.name}-${var.environment}"
+    Name = "${var.name_prefix}-${var.environment}"
   }
 }
 

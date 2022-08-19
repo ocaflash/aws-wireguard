@@ -18,6 +18,9 @@ variable "tags" {
   default     = {}
 }
 
+variable "vpc_cidr_block" {
+  defailt = "192.168.0.0/16"
+}
 
 variable "aws_access_key" {}
 variable "aws_secret_key" {}
