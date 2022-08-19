@@ -27,7 +27,7 @@ variable "vpc_cidr_block" {
   default = "192.168.0.0/16"
 }
 
-variable "public_subnet_cidrs" {
+variable "public_subnets_cidrs" {
   description = "CIDR for the Public Subnet"
   type        = list(string)
   default     = []
