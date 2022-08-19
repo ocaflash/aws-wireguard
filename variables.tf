@@ -12,6 +12,11 @@ variable "region" {
   default     = "eu-west-2"
 }
 
+variable "availability_zones" {
+  description = "Region to be used for AWS resources"
+  default     = "eu-west-2a"
+}
+
 variable "tags" {
   description = "A mapping of tags to assign to the resource"
   type        = map(string)
@@ -20,6 +25,18 @@ variable "tags" {
 
 variable "vpc_cidr_block" {
   default = "192.168.0.0/16"
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR for the Public Subnet"
+  type        = list(string)
+  default     = []
+}
+
+variable "private_subnets_cidrs" {
+  description = "CIDR for the Private Subnet"
+  type        = list(string)
+  default     = []
 }
 
 

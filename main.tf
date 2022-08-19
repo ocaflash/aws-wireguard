@@ -1,15 +1,15 @@
-# module "networking" {
-#   source  = "cn-terraform/networking/aws"
-#   version = "2.0.13"
-#
-#   name_prefix = substr(format("%s-%s", var.name_prefix, var.environment), 0, 32)
-#
-#   vpc_cidr_block                              = var.vpc_cidr_block
-#   availability_zones                          = var.availability_zones
-#   public_subnets_cidrs_per_availability_zone  = var.public_subnets_cidrs
-#   private_subnets_cidrs_per_availability_zone = var.private_subnets_cidrs
-#   single_nat                                  = true
-# }
+module "networking" {
+  source  = "cn-terraform/networking/aws"
+  version = "2.0.13"
+
+  name_prefix = substr(format("%s-%s", var.name_prefix, var.environment), 0, 32)
+
+  vpc_cidr_block                              = var.vpc_cidr_block
+  availability_zones                          = var.availability_zones
+  public_subnets_cidrs_per_availability_zone  = var.public_subnets_cidrs
+  private_subnets_cidrs_per_availability_zone = var.private_subnets_cidrs
+  single_nat                                  = true
+}
 
 resource "aws_security_group" "wireguard" {
   name        = "${var.name_prefix}-${var.environment}-vpn"
