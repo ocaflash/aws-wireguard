@@ -50,10 +50,10 @@ resource "aws_security_group" "wireguard" {
   }
 }
 
-resource "aws_eip" "wireguard" {
-  instance = aws_instance.wireguard.id
-  vpc      = true
-}
+# resource "aws_eip" "wireguard" {
+#   instance = aws_instance.wireguard.id
+#   vpc      = true
+# }
 
 resource "aws_eip_association" "wireguard" {
   instance_id   = aws_instance.wireguard.id
