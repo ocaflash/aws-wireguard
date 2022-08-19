@@ -50,6 +50,11 @@ resource "aws_security_group" "wireguard" {
   }
 }
 
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = aws_instance.wireguard.id
+  allocation_id = data.aws_eip.by_public_ip.id
+}
+
 resource "aws_eip" "wireguard" {
   instance = aws_instance.wireguard.id
   vpc      = false
