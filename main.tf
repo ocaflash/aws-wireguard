@@ -70,7 +70,7 @@ resource "aws_instance" "wireguard" {
   key_name                    = aws_key_pair.ssh_key.key_name
   subnet_id                   = module.networking.public_subnets_ids[0]
   vpc_security_group_ids      = [aws_security_group.wireguard.id]
-  associate_public_ip_address = true
+  associate_public_ip_address = false
   user_data                   = data.template_file.wireguard_userdata.rendered
 
   tags = {
