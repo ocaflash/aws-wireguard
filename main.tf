@@ -17,7 +17,7 @@ resource "aws_security_group" "wireguard" {
   vpc_id      = module.networking.vpc_id
 
   tags = {
-    Name = "${}-${var.environment}"
+    Name = "${var.name_prefix}-${var.environment}"
   }
 
   ingress {
