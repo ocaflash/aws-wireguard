@@ -22,5 +22,8 @@ variable "vpc_cidr_block" {
   default = "192.168.0.0/16"
 }
 
+
+variable "ssh_private_key" {}
+variable "ssh_public_key" {}
 variable "aws_access_key" {}
 variable "aws_secret_key" {}
