@@ -9,12 +9,12 @@ variable "name_prefix" {
 
 variable "region" {
   description = "Region to be used for AWS resources"
-  default     = "eu-west-2"
+  default     = "us-west-2"
 }
 
 variable "availability_zones" {
   description = "Region to be used for AWS resources"
-  default     = ["eu-west-2a"]
+  default     = ["us-west-2a"]
 }
 
 variable "tags" {

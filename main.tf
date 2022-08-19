@@ -14,7 +14,7 @@ module "networking" {
 resource "aws_security_group" "wireguard" {
   name        = "${var.name_prefix}-${var.environment}-vpn"
   description = "Communication to and from VPC endpoint"
-  # vpc_id      = module.networking.vpc_id
+  vpc_id      = module.networking.vpc_id
 
   tags = {
     Name = "${var.name_prefix}-${var.environment}"
@@ -65,10 +65,10 @@ data "template_file" "wireguard_userdata" {
 }
 
 resource "aws_instance" "wireguard" {
-  ami           = "ami-0fb653ca2d3203ac1"
-  instance_type = "t3a.micro" #"t3a.nano"
-  key_name      = aws_key_pair.ssh_key.key_name
-  # subnet_id              = module.networking.public_subnets_ids[0]
+  ami                    = "ami-0fb653ca2d3203ac1"
+  instance_type          = "t3a.micro" #"t3a.nano"
+  key_name               = aws_key_pair.ssh_key.key_name
+  subnet_id              = module.networking.public_subnets_ids[0]
   vpc_security_group_ids = [aws_security_group.wireguard.id]
   user_data              = data.template_file.wireguard_userdata.rendered
 
