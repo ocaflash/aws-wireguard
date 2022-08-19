@@ -65,12 +65,13 @@ data "template_file" "wireguard_userdata" {
 }
 
 resource "aws_instance" "wireguard" {
-  ami                    = data.aws_ami.latest_ubuntu.id
-  instance_type          = "t3a.micro" #"t3a.nano"
-  key_name               = aws_key_pair.ssh_key.key_name
-  subnet_id              = module.networking.public_subnets_ids[0]
-  vpc_security_group_ids = [aws_security_group.wireguard.id]
-  user_data              = data.template_file.wireguard_userdata.rendered
+  ami                         = data.aws_ami.latest_ubuntu.id
+  instance_type               = "t3a.micro" #"t3a.nano"
+  key_name                    = aws_key_pair.ssh_key.key_name
+  subnet_id                   = module.networking.public_subnets_ids[0]
+  vpc_security_group_ids      = [aws_security_group.wireguard.id]
+  associate_public_ip_address = true
+  user_data                   = data.template_file.wireguard_userdata.rendered
 
   tags = {
     Name = "${var.name_prefix}-${var.environment}"
@@ -80,5 +81,4 @@ resource "aws_instance" "wireguard" {
 resource "aws_key_pair" "ssh_key" {
   key_name   = format("%s-wg-server-ssh-key", var.environment)
   public_key = file(var.ssh_public_key)
-
 }
