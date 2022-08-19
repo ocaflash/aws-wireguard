@@ -65,7 +65,7 @@ data "template_file" "wireguard_userdata" {
 }
 
 resource "aws_instance" "wireguard" {
-  ami                    = "ami-0fb653ca2d3203ac1"
+  ami                    = data.aws_ami.latest_ubuntu.id
   instance_type          = "t3a.micro" #"t3a.nano"
   key_name               = aws_key_pair.ssh_key.key_name
   subnet_id              = module.networking.public_subnets_ids[0]
