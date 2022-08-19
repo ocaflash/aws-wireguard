@@ -1,0 +1,32 @@
+name: Provision AWS VPN
+on:
+  workflow_dispatch:
+
+jobs:
+  create_environment:
+    name: Create Enviroment
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone Repository
+      uses: actions/checkout@v2
+    - name: Pull Changes
+      run: |
+        git pull
+    - name: Create Instance
+      run: |
+        export TF_VAR_aws_access_key=${{ secrets.AWS_ACCESS_KEY }}
+        export TF_VAR_aws_secret_key=${{ secrets.AWS_SECRET_KEY }}
+        terraform init
+        terraform apply -auto-approve
+        echo "::set-output name=region::$(terraform output -raw region)"
+
+    - name: Authenticate GitHub
+      run: |
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "Github Actions [BOT]"
+    - name: Commit State & Configs
+      run: |
+        git add *
+        git commit --allow-empty --all --message "Deploy Wireguard"
+        git pull --rebase
+        git push origin HEAD
