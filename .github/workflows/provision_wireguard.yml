@@ -12,10 +12,20 @@ jobs:
     - name: Pull Changes
       run: |
         git pull
+
+    - name: Write SSH keys
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_ed25519
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        install -m 600 -D /dev/null ~/.ssh/id_ed25519.pub
+        echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_ed25519.pub
+
     - name: Create Instance
       run: |
         export TF_VAR_aws_access_key=${{ secrets.AWS_ACCESS_KEY }}
         export TF_VAR_aws_secret_key=${{ secrets.AWS_SECRET_KEY }}
+        export TF_VAR_ssh_private_key='~/.ssh/id_ed25519'
+        export TF_VAR_ssh_public_key='~/.ssh/id_ed25519.pub'
         terraform init
         terraform apply -auto-approve
         echo "::set-output name=region::$(terraform output -raw region)"
