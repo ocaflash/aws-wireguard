@@ -26,13 +26,13 @@ resource "aws_subnet" "subnet-private" {
 
 #Internet  GW
 resource "aws_internet_gateway" "wireguard" {
-  vpc_id = aws_vpc.wireguard_vpc.id
+  vpc_id = aws_vpc.wireguard-vpc.id
 }
 
 resource "aws_security_group" "wireguard" {
   name        = "${var.name_prefix}-${var.environment}-vpn"
   description = "Communication to and from VPC endpoint"
-  vpc_id      = aws_vpc.wireguard_vpc.id
+  vpc_id      = aws_vpc.wireguard-vpc.id
 
   tags = {
     Name = "${var.name_prefix}-${var.environment}"
