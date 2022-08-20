@@ -2,14 +2,11 @@
 resource "aws_vpc" "wireguard-vpc" {
   cidr_block           = var.vpc_cidr_block
   enable_dns_hostnames = true
-  tags {
-    Name = "${var.name_prefix}-${var.environment}-vpc"
-  }
 }
 
 ## Public
 resource "aws_subnet" "subnet-public" {
-  vpc_id            = aws_vpc.wireguard_vpc.id
+  vpc_id            = aws_vpc.wireguard-vpc.id
   cidr_block        = var.public_subnets_cidrs
   availability_zone = var.region + "a"
   tags = {
@@ -19,7 +16,7 @@ resource "aws_subnet" "subnet-public" {
 
 ## Private
 resource "aws_subnet" "subnet-private" {
-  vpc_id            = aws_vpc.wireguard_vpc.id
+  vpc_id            = aws_vpc.wireguard-vpc.id
   cidr_block        = var.private_subnets_cidrs
   availability_zone = var.aws_region + "b"
   tags = {
