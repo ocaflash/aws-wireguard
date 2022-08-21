@@ -1,6 +1,6 @@
 module "networking" {
   source  = "cn-terraform/networking/aws"
-  version = "2.0.13"
+  version = "2.0.16"
 
   name_prefix = substr(format("%s-%s", var.name_prefix, var.environment), 0, 32)
 
