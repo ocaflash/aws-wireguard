@@ -50,20 +50,6 @@ resource "aws_security_group" "wireguard" {
   }
 }
 
-resource "aws_eip" "wireguard" {
-  instance = aws_instance.wireguard.id
-  vpc      = true
-}
-
-data "aws_eip" "by_allocation_id" {
-  id = aws_eip.wireguard.id
-}
-
-resource "aws_eip_association" "wireguard" {
-  instance_id   = aws_instance.wireguard.id
-  allocation_id = aws_eip.by_allocation_id.id
-}
-
 data "template_file" "wireguard_userdata" {
   template = file("resources/cloud-init.yaml")
 }
@@ -81,6 +67,25 @@ resource "aws_instance" "wireguard" {
     Name = "${var.name_prefix}-${var.environment}"
   }
 }
+
+resource "aws_eip" "wireguard" {
+  # instance = aws_instance.wireguard.id
+  vpc = true
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+data "aws_eip" "by_allocation_id" {
+  id = aws_eip.wireguard.id
+}
+
+resource "aws_eip_association" "wireguard" {
+  instance_id   = aws_instance.wireguard.id
+  allocation_id = aws_eip.by_allocation_id.id
+}
+
+
 
 resource "aws_key_pair" "ssh_key" {
   key_name   = format("%s-wg-server-ssh-key", var.environment)
