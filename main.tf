@@ -69,8 +69,8 @@ resource "aws_instance" "wireguard" {
 }
 
 resource "aws_eip" "wireguard" {
-  # instance = aws_instance.wireguard.id
-  # vpc      = true
+  instance = aws_instance.wireguard.id
+  vpc      = true
   lifecycle {
     prevent_destroy = true
   }
