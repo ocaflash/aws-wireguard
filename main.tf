@@ -51,14 +51,17 @@ resource "aws_security_group" "wireguard" {
 }
 
 resource "aws_eip" "wireguard" {
-  instance                  = aws_instance.wireguard.id
-  vpc                       = true
-  associate_with_private_ip = aws_instance.wireguard.private_ip
+  instance = aws_instance.wireguard.id
+  vpc      = true
+}
+
+data "aws_eip" "by_allocation_id" {
+  id = aws_eip.wireguard.id
 }
 
 resource "aws_eip_association" "wireguard" {
   instance_id   = aws_instance.wireguard.id
-  allocation_id = aws_eip.wireguard.id
+  allocation_id = aws_eip.by_allocation_id.id
 }
 
 data "template_file" "wireguard_userdata" {
