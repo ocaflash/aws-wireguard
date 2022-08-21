@@ -51,8 +51,9 @@ resource "aws_security_group" "wireguard" {
 }
 
 resource "aws_eip" "wireguard" {
-  instance = aws_instance.wireguard.id
-  vpc      = true
+  instance                  = aws_instance.wireguard.id
+  vpc                       = true
+  associate_with_private_ip = aaws_instance.wireguard.private_ip
 }
 
 resource "aws_eip_association" "wireguard" {
