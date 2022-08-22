@@ -1,4 +1,4 @@
-resource "aws_eip" "vpn" {
+resource "aws_eip" "wireguard" {
   vpc  = true
   tags = merge(var.tags, { "Name" = "${var.name_prefix}-eip" })
 }
@@ -46,6 +46,6 @@ resource "aws_security_group" "wireguard" {
 }
 
 resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.vpn.id
-  allocation_id = aws_eip.vpn.id
+  instance_id   = aws_instance.wireguard.id
+  allocation_id = aws_eip.wireguard.id
 }
