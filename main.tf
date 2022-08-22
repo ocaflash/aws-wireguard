@@ -27,7 +27,7 @@ resource "aws_instance" "wireguard" {
   user_data                   = data.template_file.wireguard_userdata.rendered
 
   tags = {
-    Name = "${var.name_prefix}-${var.environment}"
+    Name = "${var.name_prefix}-vpn"
   }
 }
 
