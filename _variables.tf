@@ -13,6 +13,3 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
-
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
