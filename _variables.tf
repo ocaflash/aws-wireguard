@@ -1,7 +1,3 @@
-variable "environment" {
-  default = "test"
-}
-
 variable "name_prefix" {
   description = "Prefix to be used in the naming of some of the created AWS resources"
   default     = "wireguard"
@@ -40,7 +36,7 @@ variable "private_subnets_cidrs" {
 }
 
 
-variable "ssh_private_key" {}
-variable "ssh_public_key" {}
+# variable "ssh_private_key" {}
+# variable "ssh_public_key" {}
 variable "aws_access_key" {}
 variable "aws_secret_key" {}
