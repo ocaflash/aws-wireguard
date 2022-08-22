@@ -10,7 +10,6 @@ data "aws_vpc" "default" {
 resource "aws_security_group" "wireguard" {
   name        = "${var.name_prefix}-${var.environment}-vpn"
   description = "Communication to and from VPC endpoint"
-  vpc_id      = module.networking.vpc_id
 
   tags = {
     Name = "${var.name_prefix}-${var.environment}"
