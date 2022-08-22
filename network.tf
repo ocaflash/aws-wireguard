@@ -8,11 +8,11 @@ data "aws_vpc" "default" {
 }
 
 resource "aws_security_group" "wireguard" {
-  name        = "${var.name_prefix}-${var.environment}-vpn"
+  name        = "${var.name_prefix}-sg-vpn"
   description = "Communication to and from VPC endpoint"
 
   tags = {
-    Name = "${var.name_prefix}-${var.environment}"
+    Name = "${var.name_prefix}-sg-vpn"
   }
 
   ingress {
