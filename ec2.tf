@@ -13,15 +13,14 @@ data "aws_ami" "latest_ubuntu" {
   }
 }
 
-resource "aws_key_pair" "auth" {
-  key_name   = "${var.name_prefix}-pub-key"
-  public_key = file(var.pub_key)
-}
-
 resource "aws_instance" "wireguard" {
   ami           = data.aws_ami.latest_ubuntu.id
   instance_type = "t3a.micro"
-  tags          = { "Name" = "${var.name_prefix}-vpn" }
+
+  tags = {
+    "Name"         = "${var.name_prefix}-ec2-${random_id.project_uuid.hex}"
+    "Project UUID" = "${random_id.project_uuid.hex}"
+  }
 
   vpc_security_group_ids = [aws_security_group.wireguard.id]
 

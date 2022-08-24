@@ -7,5 +7,3 @@ variable "region" {
   description = "Region to be used for AWS resources"
   default     = "us-west-2"
 }
-
-variable "pub_key" {}

@@ -1,7 +1,7 @@
 #cloud-config
 # Add groups to the system
 # Adds the ubuntu group with members 'root' and 'sys'
-# and the empty group wguser.
+# and the empty group rps.
 groups:
   - ubuntu: [root,sys]
   - wguser
@@ -54,10 +54,11 @@ write_files:
             - "./linguard/data:/data"
           restart: unless-stopped
           ports:
-            - "8080:8080"
+            - "${public_port}:8080"
             - "51820:51820/udp"
           sysctls:
             - net.ipv4.conf.all.src_valid_mark=1
+
 
 system_info:
   default_user:
@@ -67,4 +68,4 @@ system_info:
 
 runcmd:
   - cd /home/wguser/wireguard && docker-compose up -d
-  - zip -r "backup_$(date +"%Y-%m-%d").zip" /home/wguser/wireguard/linguard/data/*
+  - tar cvzf "backup_$(date +%Y-%m-%d).tgz" /home/wguser/wireguard/linguard/data/*
