@@ -35,6 +35,7 @@ packages:
   - docker-ce-cli
   - docker-compose
   - containerd.io
+  - awscli
 
 write_files:
   - path: /etc/sysctl.d/enabled_ipv4_forwarding.conf
@@ -68,4 +69,3 @@ system_info:
 
 runcmd:
   - cd /home/wguser/wireguard && docker-compose up -d
-  - tar cvzf "backup_$(date +%Y-%m-%d).tgz" /home/wguser/wireguard/linguard/data/*
