@@ -1,26 +1,6 @@
-resource "aws_eip" "wireguard" {
-  vpc  = true
-  tags = merge(var.tags, { "Name" = "${var.name_prefix}-eip" })
-}
-
-data "aws_vpc" "default" {
-  default = true
-}
-
 resource "aws_security_group" "wireguard" {
   name        = "${var.name_prefix}-sg-vpn"
-  description = "Communication to and from VPC endpoint"
-
-  tags = {
-    Name = "${var.name_prefix}-sg-vpn"
-  }
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 22
-    to_port     = 22
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  description = "Wireguard security group"
 
   ingress {
     protocol    = "udp"
@@ -31,8 +11,8 @@ resource "aws_security_group" "wireguard" {
 
   ingress {
     protocol    = "tcp"
-    from_port   = 8080
-    to_port     = 8080
+    from_port   = random_integer.public_port.result
+    to_port     = random_integer.public_port.result
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -43,9 +23,4 @@ resource "aws_security_group" "wireguard" {
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.wireguard.id
-  allocation_id = aws_eip.wireguard.id
 }
