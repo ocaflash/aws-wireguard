@@ -1,19 +1,19 @@
 #cloud-config
 # Add groups to the system
 # Adds the ubuntu group with members 'root' and 'sys'
-# and the empty group rps.
+# and the empty group wguser.
 groups:
   - ubuntu: [root,sys]
-  - rps
+  - wguser
   - docker
 
 # Add users to the system. Users are added after groups are added.
 users:
   - default
-  - name: rps
-    gecos: rps
+  - name: wguser
+    gecos: wguser
     shell: /bin/bash
-    primary_group: rps
+    primary_group: wguser
     sudo: ALL=(ALL) NOPASSWD:ALL
     groups: users, admin
     lock_passwd: false
@@ -40,7 +40,7 @@ write_files:
   - path: /etc/sysctl.d/enabled_ipv4_forwarding.conf
     content: |
       net.ipv4.conf.all.forwarding=1
-  - path: /home/rps/wireguard/docker-compose.yaml
+  - path: /home/wguser/wireguard/docker-compose.yaml
     content: |
       version: "3"
       services:
@@ -59,12 +59,12 @@ write_files:
           sysctls:
             - net.ipv4.conf.all.src_valid_mark=1
 
-
 system_info:
   default_user:
     groups: [docker]
-  rps:
+  wguser:
     groups: [docker]
 
 runcmd:
-  - cd /home/rps/wireguard && docker-compose up -d
+  - cd /home/wguser/wireguard && docker-compose up -d
+  - zip -r "backup_$(date +"%Y-%m-%d").zip" /home/wguser/wireguard/linguard/data/*
