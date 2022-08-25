@@ -18,7 +18,7 @@ resource "aws_instance" "wireguard" {
   instance_type = "t3a.micro"
 
   tags = {
-    "Name"         = "${var.name_prefix}-ec2-${random_id.project_uuid.hex}"
+    "Name"         = "${var.name_prefix} VPN Instance"
     "Project UUID" = "${random_id.project_uuid.hex}"
   }
 

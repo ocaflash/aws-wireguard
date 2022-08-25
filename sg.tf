@@ -3,7 +3,7 @@ resource "aws_security_group" "wireguard" {
   description = "Wireguard security group"
 
   tags = {
-    "Name"         = "${var.name_prefix}-sg-${random_id.project_uuid.hex}"
+    "Name"         = "${var.name_prefix} TCP/UDP Access"
     "Project UUID" = "${random_id.project_uuid.hex}"
   }
 

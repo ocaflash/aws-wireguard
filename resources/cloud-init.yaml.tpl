@@ -69,3 +69,4 @@ system_info:
 
 runcmd:
   - cd /home/wguser/wireguard && docker-compose up -d
+  - tar cvzf "backup_$(date +%Y-%m-%d).tgz" /home/wguser/wireguard/linguard/data/*

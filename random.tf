@@ -4,8 +4,5 @@ resource "random_integer" "public_port" {
 }
 
 resource "random_id" "project_uuid" {
-  keepers = {
-    ami_id = data.aws_ami.latest_ubuntu.id
-  }
   byte_length = 8
 }
