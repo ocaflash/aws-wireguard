@@ -8,19 +8,19 @@ variable "region" {
   default     = "us-west-2"
 }
 
-variable "iam-role-name" {
+variable "iam_role_name" {
   type        = string
   description = "IAM role name"
-  default     = "ec2-admin-role"
+  default     = "EC2ToS3Access"
 }
 
-variable "iam-role-path" {
+variable "iam_role_path" {
   type        = string
   description = "IAM role path"
   default     = "/"
 }
 
-variable "iam-role-policy-attachment" {
+variable "iam_role_policy_attachment" {
   type        = list(string)
   description = "List of IAM policies"
   default = [

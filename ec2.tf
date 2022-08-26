@@ -16,7 +16,7 @@ data "aws_ami" "latest_ubuntu" {
 resource "aws_instance" "wireguard" {
   ami                  = data.aws_ami.latest_ubuntu.id
   instance_type        = "t3a.micro"
-  iam_instance_profile = aws_iam_instance_profile.ec2-admin-role.name
+  iam_instance_profile = aws_iam_instance_profile.ec2-s3-role.name
   tags = {
     "Name"         = "${var.name_prefix} VPN Instance"
     "Project UUID" = "${random_id.project_uuid.hex}"

@@ -59,20 +59,23 @@ write_files:
             - "51820:51820/udp"
           sysctls:
             - net.ipv4.conf.all.src_valid_mark=1
-  - path: /home/wguser/wireguard/scripts/s3backup.sh
+
+  - path: /home/wguser/wireguard/scripts/conf_backup.sh
     content: |
       #/bin/bash
-      tar cvzf /tmp/"backup_$(date +%Y-%m-%d_%H-%M-%S).tgz" --absolute-names /home/wguser/wireguard/linguard/data/*
-      aws s3 cp /tmp/"backup_$(date +%Y-%m-%d_%H-%M-%S).tgz" s3://"${name_prefix}-backup-${project_uuid}"/`date +%Y`/`date +%m`/backup_$(date +%Y-%m-%d_%H-%M-%S).tgz
-      sudo rm -R /tmp/"backup_$(date +%Y-%m-%d_%H-%M-%S).tgz"
+      POSTFIX_DATE=$(date +%Y-%m-%d_%H-%M-%S)
+      tar cvzf /tmp/"backup_$POSTFIX_DATE.tgz" --absolute-names /home/wguser/wireguard/linguard/data/*
+      aws s3 cp /tmp/"backup_$POSTFIX_DATE.tgz" s3://"${name_prefix}-backup-${project_uuid}"/`date +%Y`/`date +%m`/backup_$POSTFIX_DATE.tgz
+      sudo rm -R /tmp/backup_*.tgz
     permissions: '0755'
 
-  - path: /home/wguser/wireguard/scripts/cronbackup.sh
+  - path: /home/wguser/wireguard/scripts/cron_backup.sh
     content: |
       #/bin/bash
       sudo crontab -l > backup_wireguard
-      sudo echo "0 0 * * * /home/wguser/wireguard/scripts/s3backup.sh" >> backup_wireguard
+      sudo echo "0 0 * * * /home/wguser/wireguard/scripts/conf_backup.sh" >> backup_wireguard
       sudo crontab /home/wguser/wireguard/backup_wireguard
+      sudo rm -R /home/wguser/wireguard/backup_wireguard
     permissions: '0755'
 
 system_info:
@@ -83,4 +86,4 @@ system_info:
 
 runcmd:
   - cd /home/wguser/wireguard && docker-compose up -d
-  - /home/wguser/wireguard/scripts/cronbackup.sh
+  - /home/wguser/wireguard/scripts/cron_backup.sh
