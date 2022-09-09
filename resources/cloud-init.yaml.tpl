@@ -55,7 +55,7 @@ write_files:
             - "./linguard/data:/data"
           restart: unless-stopped
           ports:
-            - "${web_port}:${web_port}"
+            - "${web_port}:8080"
             - "${client_port}:${client_port}/udp"
           sysctls:
             - net.ipv4.conf.all.src_valid_mark=1
@@ -71,3 +71,4 @@ runcmd:
   - [ sh, -c, "sleep 60s" ]
   - sudo docker cp /home/wguser/wireguard/scripts/conf_create.py linguard:/var/www/linguard/
   - cat /home/wguser/wireguard/scripts/conf_run_create.sh | sudo docker exec -i linguard bash
+  - sudo docker restart linguard

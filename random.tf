@@ -12,6 +12,7 @@ resource "random_id" "project_uuid" {
   byte_length = 8
 }
 
-resource "random_id" "web_admin_pass" {
-  byte_length = 8
+resource "random_password" "web_admin_pass" {
+  length  = 8
+  special = true
 }

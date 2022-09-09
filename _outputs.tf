@@ -9,11 +9,17 @@ output "project_uuid" {
 }
 
 output "web_admin_name" {
-  description = ""
+  description = "User Dashboard Name admin's"
   value       = var.web_admin_name
 }
 
 output "web_admin_pass" {
-  description = ""
-  value       = random_id.web_admin_pass.hex
+  description = "User Dashboard Password admin's"
+  value       = random_password.web_admin_pass.result
+  sensitive   = true
+}
+
+output "comment_password" {
+  value = "print 'terraform output -json' to view web_admin_pass"
+
 }

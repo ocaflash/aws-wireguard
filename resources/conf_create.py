@@ -28,7 +28,6 @@ on_down = ["/usr/sbin/iptables -D FORWARD -i tough-moth -j ACCEPT",
 
 def cleanup():
     yield
-    default_cleanup()
     config_manager.load_defaults()
     config.load_defaults()
 
@@ -74,8 +73,7 @@ def get_system_interfaces() -> Dict[str, Any]:
 
 
 def create_iface(name, ipv4, port):
-    gw = "eth0"
-    # list(filter(lambda i: i != "lo", get_system_interfaces().keys()))[1]
+    gw = list(filter(lambda i: i != "lo", get_system_interfaces().keys()))[1]
     return Interface(name=name, description="", gw_iface=gw, ipv4_address=ipv4, listen_port=port, auto=False,
                      on_up=on_up, on_down=on_down)
 
@@ -92,21 +90,26 @@ def add_peers(iface):
 
 
 def fill_config_data():
-    cleanup()
     open("data/.setup", 'w').close()
     iface = create_iface(create_interface_dict()["name"], create_interface_dict()["ipv4_address"],
                          create_interface_dict()["listen_port"])
     interfaces[iface.uuid] = iface
     add_peers(iface)
+    iface.auto = True
+    iface.up()
     config.set_default_endpoint()
     config_manager.config_filepath = filepath
     config_manager.save()
     config.apply()
+    wireguard_manager.stop()
+    sleep(1)
+    wireguard_manager.start()
+    cron_manager.start()
 
 # if not exists('data/linguard.yaml.bkp'):
 #     shutil.copy(filepath, 'data/linguard.yaml.bkp')
 # shutil.copy('data/linguard.yaml.bkp', filepath)
-# read_list_users('users.csv')
+read_list_users(file_users)
 
 create_admin("${web_admin_name}", "${web_admin_pass}")
 fill_config_data()

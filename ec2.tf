@@ -44,7 +44,7 @@ data "template_file" "conf_create" {
     ipv4_address   = var.ip_address_int,
     web_port       = random_integer.web_port.result
     web_admin_name = var.web_admin_name,
-    web_admin_pass = random_id.web_admin_pass.hex
+    web_admin_pass = random_password.web_admin_pass.result
   }
 }
 

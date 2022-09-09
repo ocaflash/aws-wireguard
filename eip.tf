@@ -4,6 +4,7 @@ resource "aws_eip" "wireguard" {
     "Name"         = "${var.name_prefix} Public IP"
     "Project UUID" = "${random_id.project_uuid.hex}"
   }
+  vpc = true
   # lifecycle {
   #   prevent_destroy = true
   # }
