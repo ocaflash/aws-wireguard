@@ -97,5 +97,5 @@ def fill_config_data():
     sleep(1)
     wireguard_manager.start()
 
-create_admin("${web_admin_name}", "${web_admin_pass}")
+# create_admin("${web_admin_name}", "${web_admin_pass}")
 fill_config_data()
