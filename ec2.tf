@@ -42,7 +42,7 @@ data "template_file" "conf_create" {
   template = file("resources/conf_create.py")
   vars = {
     ipv4_address   = var.ip_address_int,
-    web_port       = random_integer.web_port.result
+    client_port    = random_integer.client_port.result,
     web_admin_name = var.web_admin_name,
     web_admin_pass = random_password.web_admin_pass.result
   }

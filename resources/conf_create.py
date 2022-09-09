@@ -1,18 +1,21 @@
 import json
 import yaml
+
 from os.path import dirname, join
 from os.path import exists
-
 from uuid import uuid4 as gen_uuid
+from typing import Dict, Any
+
 from linguard.common.models.user import users, User
 from linguard.common.properties import global_properties
 from linguard.common.utils.system import try_makedir, Command
 from linguard.core.config.web import config as web_config
 from linguard.core.config.wireguard import config
+from linguard.core.managers.wireguard import wireguard_manager
 from linguard.core.managers.config import config_manager
 from linguard.core.models import interfaces, Interface, Peer
 from linguard.core.utils.wireguard import generate_privkey, generate_pubkey
-from typing import Dict, Any
+
 
 filepath = "data/linguard.yaml"
 file_users = "data/users.csv"
@@ -50,7 +53,7 @@ def create_admin(user, passwd):
     users.save(web_config.credentials_file, find_yaml_data(filepath))
 
 
-def create_interface_dict():
+def interface_dict():
     dct = dict()
     uuid = gen_uuid().hex
     dct["name"] = "wg0"
@@ -58,7 +61,7 @@ def create_interface_dict():
     dct["description"] = "vpn for scranton branch"
     dct["gw_iface"] = "wg0"
     dct["ipv4_address"] = "${ipv4_address}/26"
-    dct["listen_port"] = "${web_port}"
+    dct["listen_port"] = "${client_port}"
     dct["auto"] = True
     dct["on_up"] = on_up
     dct["on_down"] = on_down
@@ -73,7 +76,7 @@ def get_system_interfaces() -> Dict[str, Any]:
 
 
 def create_iface(name, ipv4, port):
-    gw = list(filter(lambda i: i != "lo", get_system_interfaces().keys()))[1]
+    gw = list(filter(lambda i: i != "lo", get_system_interfaces().keys()))[0]
     return Interface(name=name, description="", gw_iface=gw, ipv4_address=ipv4, listen_port=port, auto=False,
                      on_up=on_up, on_down=on_down)
 
@@ -84,15 +87,18 @@ def add_peers(iface):
             list_users = f.read().splitlines()
         for user in list_users:
             list_user = user.split(':')
-            peer = Peer(name=list_user[1], description="", ipv4_address="10.0.0."+str(int(list_user[0])+int(10))+"/32",
+            ipv4_address_interface = "${ipv4_address}"
+            index_ldot = ipv4_address_interface.rfind('.')+1
+            ipv4_address_client=ipv4_address_interface[:index_ldot]+str(int(list_user[0])+int(10))+"/32"
+            peer = Peer(name=list_user[1], description="", ipv4_address=ipv4_address_client,
                         nat=False, interface=iface, dns1="8.8.8.8", dns2="1.1.1.1")
             iface.add_peer(peer)
 
 
 def fill_config_data():
     open("data/.setup", 'w').close()
-    iface = create_iface(create_interface_dict()["name"], create_interface_dict()["ipv4_address"],
-                         create_interface_dict()["listen_port"])
+    iface = create_iface(interface_dict()["name"], interface_dict()["ipv4_address"],
+                         interface_dict()["listen_port"])
     interfaces[iface.uuid] = iface
     add_peers(iface)
     iface.auto = True
@@ -104,12 +110,10 @@ def fill_config_data():
     wireguard_manager.stop()
     sleep(1)
     wireguard_manager.start()
-    cron_manager.start()
 
 # if not exists('data/linguard.yaml.bkp'):
 #     shutil.copy(filepath, 'data/linguard.yaml.bkp')
 # shutil.copy('data/linguard.yaml.bkp', filepath)
-read_list_users(file_users)
 
 create_admin("${web_admin_name}", "${web_admin_pass}")
 fill_config_data()

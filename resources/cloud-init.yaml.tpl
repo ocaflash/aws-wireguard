@@ -68,7 +68,7 @@ system_info:
 
 runcmd:
   - cd /home/wguser/wireguard && docker-compose up -d
-  - [ sh, -c, "sleep 60s" ]
+  - [ sh, -c, "sleep 10s" ]
   - sudo docker cp /home/wguser/wireguard/scripts/conf_create.py linguard:/var/www/linguard/
   - cat /home/wguser/wireguard/scripts/conf_run_create.sh | sudo docker exec -i linguard bash
   - sudo docker restart linguard
