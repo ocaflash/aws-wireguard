@@ -5,7 +5,7 @@ from os.path import dirname, join
 from os.path import exists
 from uuid import uuid4 as gen_uuid
 from typing import Dict, Any
-from time import sleep
+
 from linguard.common.models.user import users, User
 from linguard.common.properties import global_properties
 from linguard.common.utils.system import try_makedir, Command
@@ -15,6 +15,9 @@ from linguard.core.managers.wireguard import wireguard_manager
 from linguard.core.managers.config import config_manager
 from linguard.core.models import interfaces, Interface, Peer
 from linguard.core.utils.wireguard import generate_privkey, generate_pubkey
+
+dns1 = '8.8.8.8'
+dns2 = '1.1.1.1'
 
 filepath = 'data/linguard.yaml'
 file_users = 'data/users.csv'
@@ -30,12 +33,6 @@ on_down = ['/usr/sbin/iptables -D FORWARD -i tough-moth -j ACCEPT',
 interface_dict = dict({'name': 'wg0', 'uuid': gen_uuid().hex, 'gw_iface': 'wg0',
                        'ipv4_address': '${ipv4_address}/26', 'listen_port': '${client_port}',
                        'auto': True, 'on_up': on_up, 'on_down': on_down})
-
-
-def cleanup():
-    yield
-    config_manager.load_defaults()
-    config.load_defaults()
 
 
 def find_yaml_data(config_file):
@@ -65,8 +62,9 @@ def get_system_interfaces() -> Dict[str, Any]:
 
 def create_iface(name, ipv4, port):
     gw = list(filter(lambda i: i != 'lo', get_system_interfaces().keys()))[0]
-    return Interface(name=name, description='', gw_iface=gw, ipv4_address=ipv4, listen_port=port, auto=False,
-                     on_up=on_up, on_down=on_down)
+    return Interface(name = name, description = '', gw_iface = gw,
+                     ipv4_address = ipv4, listen_port = port, auto = False,
+                     on_up = on_up, on_down = on_down)
 
 
 def add_peers(iface):
@@ -77,9 +75,9 @@ def add_peers(iface):
             list_user = user.split(':')
             ipv4_address_interface = '${ipv4_address}'
             index_ldot = ipv4_address_interface.rfind('.')+1
-            ipv4_address_client=ipv4_address_interface[:index_ldot]+str(int(list_user[0])+int(10))+'/32'
-            peer = Peer(name=list_user[1], description='', ipv4_address=ipv4_address_client,
-                        nat=False, interface=iface, dns1='8.8.8.8', dns2='1.1.1.1')
+            ipv4_address_client = ipv4_address_interface[:index_ldot]+str(int(list_user[0])+int(10))+'/32'
+            peer = Peer(name = list_user[1], description = '', ipv4_address = ipv4_address_client,
+                        nat = False, interface = iface, dns1 = dns1, dns2 = dns2)
             iface.add_peer(peer)
 
 
@@ -99,5 +97,5 @@ def fill_config_data():
     sleep(1)
     wireguard_manager.start()
 
-create_admin('${web_admin_name}', '${web_admin_pass}')
+create_admin("${web_admin_name}", "${web_admin_pass}")
 fill_config_data()
