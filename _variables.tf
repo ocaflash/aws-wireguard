@@ -5,7 +5,7 @@ variable "name_prefix" {
 
 variable "region" {
   description = "Region to be used for AWS resources"
-  default     = "us-west-2"
+  default     = "eu-central-1"
 }
 
 variable "iam_role_name" {

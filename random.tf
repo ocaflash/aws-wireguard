@@ -11,8 +11,3 @@ resource "random_integer" "client_port" {
 resource "random_id" "project_uuid" {
   byte_length = 8
 }
-
-resource "random_password" "web_admin_pass" {
-  length  = 8
-  special = true
-}

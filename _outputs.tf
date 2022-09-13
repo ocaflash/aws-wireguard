@@ -4,6 +4,6 @@ output "management_dashboard" {
 }
 
 output "project_uuid" {
-  description = "Tag Project UUID"
+  description = "Project UUID Tag"
   value       = random_id.project_uuid.hex
 }
