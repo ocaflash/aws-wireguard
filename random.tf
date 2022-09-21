@@ -11,3 +11,7 @@ resource "random_integer" "client_port" {
 resource "random_id" "project_uuid" {
   byte_length = 8
 }
+
+resource "random_id" "uuid_interface" {
+  byte_length = 16
+}

@@ -29,17 +29,7 @@ variable "iam_role_policy_attachment" {
   ]
 }
 
-variable "ssh_user" {
-  description = "SSH user for connect to aws"
-  default     = "wguser"
-}
-
 variable "ip_address_int" {
   description = "IP address for Wireguard interface"
   default     = "192.168.10.2"
-}
-
-variable "web_admin_name" {
-  description = "Name admin user for connect to web"
-  default     = "admin"
 }

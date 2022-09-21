@@ -23,13 +23,6 @@ resource "aws_security_group" "wireguard" {
 
   ingress {
     protocol    = "tcp"
-    from_port   = 22
-    to_port     = 22
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    protocol    = "tcp"
     from_port   = random_integer.web_port.result
     to_port     = random_integer.web_port.result
     cidr_blocks = ["0.0.0.0/0"]
