@@ -7,8 +7,10 @@ AWS EC2 Instance with Wireguard Installed
 3. Run command `terraform init` to initializes a working directory containing Terraform configuration files. 
 4. Run `terraform plan` and `terraform apply` for deploying.
 5. After execution, the following information will be received: 
-`management_dashboard = "http://3.125.179.178:6423"
-project_uuid = "bee7dc332753c8ae"`
+```
+management_dashboard = "http://3.125.179.178:6423"
+project_uuid = "bee7dc332753c8ae"
+```
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
