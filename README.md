@@ -1,6 +1,8 @@
 # aws-wireguard
 AWS EC2 Instance with Wireguard Installed
 
+# Usage
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
