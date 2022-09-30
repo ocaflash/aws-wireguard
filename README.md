@@ -11,6 +11,7 @@ AWS EC2 Instance with Wireguard Installed
 management_dashboard = "http://3.125.179.178:6423"
 project_uuid = "bee7dc332753c8ae"
 ```
+6. Go to this address and create a new administrator.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
