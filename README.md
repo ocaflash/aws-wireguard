@@ -3,7 +3,7 @@ AWS EC2 Instance with Wireguard Installed
 
 # Getting Started
 1. Create an S3 bucket named `wireguard-tfstate-3f1a86f1`. 
-This name is specified in the file aws.tf. Necessary for S3 backend to work correctly.
+This name is specified in the file `aws.tf`. Necessary for S3 backend to work correctly.
 3. Run command `terraform init`
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
