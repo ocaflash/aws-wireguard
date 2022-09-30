@@ -2,7 +2,8 @@
 AWS EC2 Instance with Wireguard Installed
 
 # Usage
-
+1. Create an S3 bucket named wireguard-tfstate-3f1a86f1. This name is specified in the file aws.tf . Necessary for the correct operation of server terraforms
+2. 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
