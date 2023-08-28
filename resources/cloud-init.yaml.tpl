@@ -96,7 +96,15 @@ write_files:
             on_up:
             - "/usr/sbin/iptables -I FORWARD -i wg0 -j ACCEPT\r"
             - "/usr/sbin/iptables -I FORWARD -o wg0 -j ACCEPT\r"
-            - /usr/sbin/iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE
+            - "/usr/sbin/iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE\r"
+            - "/usr/sbin/iptables -I FORWARD -m string --algo bm --string 'BitTorrent' -j DROP\r"
+            - "/usr/sbin/iptables -I FORWARD -m string --algo bm --string 'BitTorrent protocol' -j DROP\r"
+            - "/usr/sbin/iptables -I FORWARD -m string --algo bm --string 'peer_id=' -j DROP\r"
+            - "/usr/sbin/iptables -I FORWARD -m string --algo bm --string '.torrent' -j DROP\r"
+            - "/usr/sbin/iptables -I FORWARD -m string --algo bm --string 'announce.php?passkey=' -j DROP\r"
+            - "/usr/sbin/iptables -I FORWARD -m string --algo bm --string 'torrent' -j DROP\r"
+            - "/usr/sbin/iptables -I FORWARD -m string --algo bm --string 'announce' -j DROP\r"
+            - /usr/sbin/iptables -I FORWARD -m string --algo bm --string 'info_hash' -j DROP
             peers: !yamlable/peers {}
             private_key: __private_key__
             public_key: __public_key__
