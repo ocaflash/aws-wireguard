@@ -6,9 +6,7 @@ resource "aws_eip" "wireguard" {
     "Project UUID" = "${random_id.project_uuid.hex}"
   }
 
-  vpc = true
-
-  # lifecycle {
-  #   prevent_destroy = true
-  # }
+  lifecycle {
+    prevent_destroy = true
+  }
 }

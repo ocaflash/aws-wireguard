@@ -1,4 +1,4 @@
-resource "random_integer" "web_port" {
+resource "random_integer" "dashboard_port" {
   min = 1000
   max = 9999
 }

@@ -1,13 +1,6 @@
-resource "aws_default_vpc" "default" {
-  tags = {
-    Name = "Default VPC"
-  }
-}
-
 resource "aws_security_group" "wireguard" {
   name        = "${var.name_prefix}-sg-vpn"
   description = "Wireguard security group"
-  vpc_id      = aws_default_vpc.default.id
 
   tags = {
     "Name"         = "${var.name_prefix} TCP/UDP Access"
