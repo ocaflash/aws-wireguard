@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "backup" {
 
   tags = {
     "Name"         = "${var.name_prefix}-backup-${random_id.project_uuid.hex}"
-    "Project UUID" = "${random_id.project_uuid.hex}"
+    "Project UUID" = random_id.project_uuid.hex
   }
 }
 

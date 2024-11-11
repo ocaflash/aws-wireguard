@@ -5,13 +5,13 @@ variable "name_prefix" {
 
 variable "region" {
   description = "Region to be used for AWS resources"
-  default     = "eu-central-1"
+  default     = "ap-south-1"
 }
 
 variable "iam_role_name" {
   type        = string
   description = "IAM role name"
-  default     = "EC2ToS3Access"
+  default     = "EC2ToS3Access-wireguard"
 }
 
 variable "iam_role_path" {

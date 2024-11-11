@@ -8,7 +8,7 @@ terraform {
   backend "s3" {
     bucket = "wireguard-tfstate-3f1a86f1"
     key    = "wireguard/terraform.tfstate"
-    region = "eu-central-1"
+    region = "ap-south-1"
   }
 }
 
