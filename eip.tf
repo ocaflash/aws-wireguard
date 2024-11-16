@@ -3,10 +3,10 @@ resource "aws_eip" "wireguard" {
 
   tags = {
     "Name"         = "${var.name_prefix} Public IP"
-    "Project UUID" = "${random_id.project_uuid.hex}"
+    "Project UUID" = random_id.project_uuid.hex
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }

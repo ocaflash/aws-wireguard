@@ -29,6 +29,12 @@ variable "iam_role_policy_attachment" {
   ]
 }
 
+variable "ssm_access_policy_name" {
+  description = "The name of the IAM policy for accessing Parameter Store"
+  type        = string
+  default     = "SSMAccessPolicy-wireguard"
+}
+
 variable "ip_address_int" {
   description = "IP address for Wireguard interface"
   default     = "192.168.10.2"

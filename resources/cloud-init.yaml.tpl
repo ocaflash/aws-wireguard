@@ -55,7 +55,7 @@ write_files:
             - "./linguard/data:/data"
           restart: unless-stopped
           ports:
-            - "${web_port}:8080"
+            - "${dashboard_port}:8080"
             - "${client_port}:${client_port}/udp"
           sysctls:
             - net.ipv4.conf.all.src_valid_mark=1
@@ -121,6 +121,15 @@ write_files:
       sed -i "s|__private_key__|$privatekey|g" linguard/data/linguard.yaml
       sed -i "s|__public_key__|$publickey|g" linguard/data/linguard.yaml
       touch linguard/data/.setup
+    permissions: '0755'
+
+  - path: /home/wguser/wireguard/scripts/save_credentials.sh
+    content: |
+      #!/bin/bash
+      ADMIN_USERNAME=$(cat /home/wguser/wireguard/linguard/data/admin_username.txt)
+      ADMIN_PASSWORD=$(cat /home/wguser/wireguard/linguard/data/admin_password.txt)
+      aws ssm put-parameter --name "/wireguard/admin_username" --value "$ADMIN_USERNAME" --type "String" --overwrite
+      aws ssm put-parameter --name "/wireguard/admin_password" --value "$ADMIN_PASSWORD" --type "SecureString" --overwrite
     permissions: '0755'
 
 system_info:
