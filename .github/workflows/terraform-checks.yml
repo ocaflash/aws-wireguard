@@ -1,33 +1,42 @@
+
 name: "Terraform Checks and PR Creation"
+
 on:
   push:
     branches-ignore:
       - master
+
 jobs:
   terraform-checks:
     name: "Terraform Checks"
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
       pull-requests: write
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: "1.5.0"
+
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
         aws-region: ap-south-1
+
     - name: Setup tflint
       run: |
         curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
     - name: Run tflint
       id: tflint
       run: |
@@ -42,26 +51,33 @@ jobs:
         if grep -q "Error:" tflint_output.txt; then
           echo "TF_LINT_ERRORS=true" >> $GITHUB_ENV
         fi
+
     - name: Print tflint results to console
       run: |
         echo "tflint results:"
         echo "$TF_LINT_OUTPUT"
+
     - name: Fail if tflint errors
       if: env.TF_LINT_ERRORS == 'true'
       run: |
         echo "tflint found errors. Failing the workflow."
         exit 1
+
     - name: Fail if tflint warnings
       if: env.TF_LINT_WARNINGS == 'true'
       run: |
         echo "tflint found warnings. Failing the workflow."
         exit 1
+
     - name: Terraform Format
       run: terraform fmt -check
+
     - name: Terraform Init
       run: terraform init
+
     - name: Terraform Validate
       run: terraform validate
+
     - name: Check Token Permissions
       uses: actions/github-script@v6
       with:
@@ -71,6 +87,7 @@ jobs:
           console.log('Owner:', context.repo.owner);
           console.log('Ref:', context.ref);
           console.log('Actor:', context.actor);
+
           try {
             const tokenPermissions = await github.rest.repos.get({
               owner: context.repo.owner,
@@ -79,6 +96,7 @@ jobs:
           } catch (error) {
             console.error('Error fetching repository details:', error);
           }
+
   createPullRequest:
     name: Create Pull Request
     runs-on: ubuntu-latest
@@ -107,3 +125,4 @@ jobs:
               head: currentBranch,
               base: 'master',
               body: 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully'
+            });
