@@ -1,6 +1,6 @@
 terraform {
   required_providers {
-    required_version = "~> 1.1.9"
+
     aws = {
       source  = "hashicorp/aws"
       version = "~> 4.0"
@@ -9,6 +9,7 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6.2"
     }
+
   }
   backend "s3" {
     bucket = "wireguard-tfstate-3f1a86f1"
