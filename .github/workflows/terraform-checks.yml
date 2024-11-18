@@ -25,7 +25,7 @@ jobs:
         terraform_version: "1.5.0"
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
@@ -33,40 +33,47 @@ jobs:
 
     - name: Terraform Format
       id: fmt
-      run: terraform fmt -check
-      continue-on-error: true
+      run: |
+        terraform fmt -check
+        echo "fmt_exit_code=$?" >> $GITHUB_OUTPUT
 
     - name: Terraform Init
       id: init
-      run: terraform init
+      run: |
+        terraform init
+        echo "init_exit_code=$?" >> $GITHUB_OUTPUT
 
     - name: Terraform Validate
       id: validate
-      run: terraform validate
+      run: |
+        terraform validate
+        echo "validate_exit_code=$?" >> $GITHUB_OUTPUT
 
     - name: Terraform Plan
       id: plan
       if: github.event_name == 'pull_request'
-      run: terraform plan -no-color
-      continue-on-error: true
+      run: |
+        terraform plan -no-color 2>&1 > plan.txt
+        echo "plan_exit_code=$?" >> $GITHUB_OUTPUT
+        cat plan.txt
 
     - name: Update Pull Request
       uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
-      env:
-        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-          #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-          #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+          const fs = require('fs');
+          const plan = fs.readFileSync('plan.txt', 'utf8');
+          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outputs.fmt_exit_code == '0' && 'success' || 'failure' }}\`
+          #### Terraform Initialization ⚙️\`${{ steps.init.outputs.init_exit_code == '0' && 'success' || 'failure' }}\`
+          #### Terraform Validation 🤖\`${{ steps.validate.outputs.validate_exit_code == '0' && 'success' || 'failure' }}\`
+          #### Terraform Plan 📖\`${{ steps.plan.outputs.plan_exit_code == '0' && 'success' || 'failure' }}\`
           
           <details><summary>Show Plan</summary>
           
           \`\`\`\n
-          ${process.env.PLAN}
+          ${plan}
           \`\`\`
           
           </details>`;
@@ -79,7 +86,7 @@ jobs:
           })
 
     - name: Terraform Plan Status
-      if: steps.plan.outcome == 'failure'
+      if: steps.plan.outputs.plan_exit_code != '0'
       run: exit 1
 
 #    - name: Terraform Apply
