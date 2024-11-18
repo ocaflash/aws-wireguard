@@ -35,6 +35,6 @@ resource "aws_ssm_association" "wireguard_reset_password_association" {
   }
 
   automation_target_parameter_name = "InstanceId"
-  max_concurrency                 = "1"
-  max_errors                      = "0"
+  max_concurrency                  = "1"
+  max_errors                       = "0"
 }

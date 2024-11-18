@@ -26,7 +26,7 @@ resource "aws_instance" "wireguard" {
   vpc_security_group_ids = [aws_security_group.wireguard.id]
 
   user_data = templatefile("resources/cloud-init.yaml.tpl",
-    { dashboard_port       = random_integer.dashboard_port.result,
+    { dashboard_port = random_integer.dashboard_port.result,
       client_port    = random_integer.client_port.result,
       project_uuid   = random_id.project_uuid.hex,
       uuid_interface = random_id.uuid_interface.hex,
