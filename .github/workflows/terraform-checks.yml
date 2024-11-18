@@ -68,27 +68,6 @@ jobs:
     - name: Terraform Validate
       run: terraform validate
 
-    - name: Check Token Permissions
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          console.log('Current Context:');
-          console.log('Repository:', context.repo.repo);
-          console.log('Owner:', context.repo.owner);
-          console.log('Ref:', context.ref);
-          console.log('Actor:', context.actor);
-
-          try {
-            const tokenPermissions = await github.rest.permissions.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            console.log('Token Permissions:', tokenPermissions.data);
-          } catch (error) {
-            console.error('Error fetching permissions:', error);
-          }
-
   create_pull_request:
     name: 'Create PR'
     runs-on: ubuntu-latest
