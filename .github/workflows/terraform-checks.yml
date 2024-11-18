@@ -109,21 +109,19 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Pull Request
-        id: cpr
-        uses: peter-evans/create-pull-request@v7
+        uses: actions/github-script@v6
         with:
-          base: master
-          branch: ${{ github.ref_name }}
-          delete-branch: false
-          title: 'Review: Changes from ${{ github.ref_name }}'
-          body: |
-            Automated pull request for code review
-            - Terraform configuration validated
-            - CI checks completed successfully
-          draft: true
-
-      - name: Check Pull Request Status
-        if: steps.cpr.outputs.pull-request-number
-        run: |
-            echo "Pull Request Created - Number: ${{ steps.cpr.outputs.pull-request-number }}"
-            echo "Pull Request URL: ${{ steps.cpr.outputs.pull-request-url }}"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { repo, owner } = context.repo;
+            const currentBranch = context.ref.replace('refs/heads/', '');
+              
+            await github.rest.pulls.create({
+              owner,
+              repo,
+              title: `Review: Changes in ${currentBranch}`,
+              head: currentBranch,
+              base: 'master',
+              body: 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully',
+              draft: true
+            });
