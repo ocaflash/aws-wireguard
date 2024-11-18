@@ -39,7 +39,7 @@ jobs:
       id: tflint
       run: |
         tflint > tflint_output.txt || true
-        echo "::set-output name=tflint_output::$(cat tflint_output.txt)"
+        echo "tflint_output=$(cat tflint_output.txt)" >> $GITHUB_ENV
 
     - name: Comment on PR with tflint results
       uses: actions/github-script@v6
@@ -51,7 +51,7 @@ jobs:
           <details><summary>Show Results</summary>
           \n
           \`\`\`\n
-          ${{ steps.tflint.outputs.tflint_output }}
+          ${{ env.tflint_output }}
           \`\`\`
           </details>`;
           github.rest.issues.createComment({
