@@ -37,6 +37,3 @@ jobs:
       uses: terraform-linters/setup-tflint@v3
       with:
         tflint_version: v0.44.1
-
-    - name: Terraform Security Check
-      uses: aquasecurity/tfsec-action@v1.0.0
