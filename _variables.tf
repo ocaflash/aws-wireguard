@@ -1,9 +1,11 @@
 variable "name_prefix" {
+  type        = string
   description = "Prefix to be used in the naming of some of the created AWS resources"
   default     = "wireguard"
 }
 
 variable "region" {
+  type        = string
   description = "Region to be used for AWS resources"
   default     = "ap-south-1"
 }
@@ -29,13 +31,8 @@ variable "iam_role_policy_attachment" {
   ]
 }
 
-variable "ssm_access_policy_name" {
-  description = "The name of the IAM policy for accessing Parameter Store"
-  type        = string
-  default     = "SSMAccessPolicy-wireguard"
-}
-
 variable "ip_address_int" {
+  type        = string
   description = "IP address for Wireguard interface"
   default     = "192.168.10.2"
 }
