@@ -68,11 +68,26 @@ jobs:
     - name: Terraform Validate
       run: terraform validate
 
-    - name: Print github.token permissions
-      run: |
-        echo "github.token permissions:"
-        echo "contents: ${{ github.token_permissions.contents }}"
-        echo "pull-requests: ${{ github.token_permissions.pull-requests }}"
+    - name: Check Token Permissions
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { token } = context;
+          console.log('Current Token Information:');
+          console.log('Repository:', context.repo.repo);
+          console.log('Owner:', context.repo.owner);
+          console.log('Ref:', context.ref);
+
+          try {
+            const permissions = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.actor
+            });
+            console.log('Repository Permissions:', permissions.data.permission);
+          } catch (error) {
+            console.error('Error fetching permissions:', error);
+          }
 
   create_pull_request:
     name: 'Create PR'
