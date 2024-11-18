@@ -39,6 +39,13 @@ jobs:
       id: tflint
       run: |
         tflint > tflint_output.txt || true
+        TF_LINT_OUTPUT=$(cat tflint_output.txt)
+        echo "TF_LINT_OUTPUT<<EOF" >> $GITHUB_ENV
+        echo "$TF_LINT_OUTPUT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+        if grep -q "Warning:" tflint_output.txt; then
+          echo "TF_LINT_WARNINGS=true" >> $GITHUB_ENV
+        fi
 
     - name: Comment on PR with tflint results
       uses: actions/github-script@v6
@@ -46,15 +53,11 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const fs = require('fs');
-          const path = require('path');
-          const tflintOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'tflint_output.txt');
-          const tflintOutput = fs.readFileSync(tflintOutputPath, 'utf8');
           const output = `#### tflint Results 📖
           <details><summary>Show Results</summary>
           \n
           \`\`\`\n
-          ${tflintOutput}
+          ${{ env.TF_LINT_OUTPUT }}
           \`\`\`
           </details>`;
           github.rest.issues.createComment({
@@ -108,6 +111,17 @@ jobs:
         title: "Auto PR for branch ${{ github.ref_name }}"
         body: "This PR was automatically created by GitHub Actions."
         labels: "auto-pr"
+
+    - name: Print tflint results to console
+      run: |
+        echo "tflint results:"
+        echo "$TF_LINT_OUTPUT"
+
+    - name: Fail if tflint warnings
+      if: env.TF_LINT_WARNINGS == 'true'
+      run: |
+        echo "tflint found warnings. Failing the workflow."
+        exit 1
 
 #    - name: Terraform Apply
 #      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
