@@ -49,15 +49,9 @@ jobs:
           echo "TF_LINT_WARNINGS=true" >> $GITHUB_ENV
         fi
 
-    - name: Check GITHUB_TOKEN permissions
-      run: |
-        echo "GITHUB_TOKEN permissions:"
-        echo "Contents: ${{ github.token_permissions.contents }}"
-        echo "Pull Requests: ${{ github.token_permissions.pull-requests }}"
-
     - name: Comment on PR with tflint results
       uses: actions/github-script@v6
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request_target'
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
@@ -89,13 +83,13 @@ jobs:
       run: terraform validate
 
     - name: Terraform Plan
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request_target'
       run: terraform plan -no-color
       id: plan
 
     - name: Comment on PR with Terraform Plan
       uses: actions/github-script@v6
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request_target'
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
