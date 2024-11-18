@@ -108,33 +108,22 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get Current Branch
-        id: branch
-        run: |
-          current_branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
-          echo "current_branch=$current_branch" >> $GITHUB_OUTPUT
-
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: Update from ${{ steps.branch.outputs.current_branch }}
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           base: master
-          branch: ${{ steps.branch.outputs.current_branch }}
+          branch: ${{ github.ref_name }}
           delete-branch: false
-          title: 'Merge ${{ steps.branch.outputs.current_branch }} into master'
+          title: 'Review: Changes from ${{ github.ref_name }}'
           body: |
-            Automated pull request to merge current feature branch into master
-            - Terraform configuration checked and validated
-            - All CI checks passed
-          assignees: ${{ github.actor }}
-          reviewers: ${{ github.actor }}
-          draft: false
+            Automated pull request for code review
+            - Terraform configuration validated
+            - CI checks completed successfully
+          draft: true
 
-      - name: Check Pull Request Creation Status
+      - name: Check Pull Request Status
         if: steps.cpr.outputs.pull-request-number
         run: |
-          echo "Pull Request Created - Number: ${{ steps.cpr.outputs.pull-request-number }}"
-          echo "Pull Request URL: ${{ steps.cpr.outputs.pull-request-url }}"
+            echo "Pull Request Created - Number: ${{ steps.cpr.outputs.pull-request-number }}"
+            echo "Pull Request URL: ${{ steps.cpr.outputs.pull-request-url }}"
