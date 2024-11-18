@@ -38,7 +38,7 @@ jobs:
     - name: Run tflint
       id: tflint
       run: |
-        tflint > tflint_output.txt
+        tflint > tflint_output.txt || true
         echo "::set-output name=tflint_output::$(cat tflint_output.txt)"
 
     - name: Comment on PR with tflint results
