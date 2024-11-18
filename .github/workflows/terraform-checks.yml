@@ -31,6 +31,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
         aws-region: ap-south-1
 
+    - name: Setup tflint
+      run: |
+        curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+    - name: Run tflint
+      run: tflint
+
     - name: Terraform Format
       run: terraform fmt -check
 
@@ -64,6 +71,17 @@ jobs:
             repo: context.repo.repo,
             body: output
           });
+
+    - name: Create Pull Request
+      if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main'
+      uses: peter-evans/create-pull-request@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref_name }}
+        base: master
+        title: "Auto PR for branch ${{ github.ref_name }}"
+        body: "This PR was automatically created by GitHub Actions."
+        labels: "auto-pr"
 
 #    - name: Terraform Apply
 #      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
