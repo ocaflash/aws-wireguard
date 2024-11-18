@@ -114,6 +114,7 @@ jobs:
           branch: ${{ github.ref_name }}
           base: master
           title: '[CI] Auto PR for ${{ github.ref_name }}'
+          force-create-pull-request: true
           body: |
             Automatically created PR by GitHub Actions
 
