@@ -1,4 +1,4 @@
-name: "Terraform Checks"
+name: "Terraform Checks and PR Creation"
 
 on:
   push:
@@ -76,31 +76,3 @@ jobs:
         title: "Auto PR for branch ${{ github.ref_name }}"
         body: "This PR was automatically created by GitHub Actions."
         labels: "auto-pr"
-
-  merge-and-apply:
-    name: "Merge and Apply"
-    runs-on: ubuntu-latest
-    needs: terraform-checks
-    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: "1.5.0"
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-        aws-region: ap-south-1
-
-    - name: Terraform Init
-      run: terraform init
-
-    # - name: Terraform Apply
-    #   run: terraform apply -auto-approve
