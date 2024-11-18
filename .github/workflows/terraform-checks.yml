@@ -49,6 +49,17 @@ jobs:
           echo "TF_LINT_WARNINGS=true" >> $GITHUB_ENV
         fi
 
+    - name: Print tflint results to console
+      run: |
+        echo "tflint results:"
+        echo "$TF_LINT_OUTPUT"
+
+    - name: Fail if tflint warnings
+      if: env.TF_LINT_WARNINGS == 'true'
+      run: |
+        echo "tflint found warnings. Failing the workflow."
+        exit 1
+
     - name: Comment on PR with tflint results
       if: github.event_name == 'pull_request_target'
       uses: actions/github-script@v6
@@ -117,17 +128,6 @@ jobs:
         title: "Auto PR for branch ${{ github.ref_name }}"
         body: "This PR was automatically created by GitHub Actions."
         labels: "auto-pr"
-
-    - name: Print tflint results to console
-      run: |
-        echo "tflint results:"
-        echo "$TF_LINT_OUTPUT"
-
-    - name: Fail if tflint warnings
-      if: env.TF_LINT_WARNINGS == 'true'
-      run: |
-        echo "tflint found warnings. Failing the workflow."
-        exit 1
 
 #    - name: Terraform Apply
 #      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
