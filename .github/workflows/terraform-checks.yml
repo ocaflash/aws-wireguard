@@ -4,8 +4,8 @@ on:
   push:
     branches-ignore:
       - master
-  pull_request:
-    branches-ignore:
+  pull_request_target:
+    branches:
       - master
 
 jobs:
@@ -50,8 +50,8 @@ jobs:
         fi
 
     - name: Comment on PR with tflint results
-      uses: actions/github-script@v6
       if: github.event_name == 'pull_request_target'
+      uses: actions/github-script@v6
       with:
         github-token: ${{ github.token }}
         script: |
@@ -88,8 +88,8 @@ jobs:
       id: plan
 
     - name: Comment on PR with Terraform Plan
-      uses: actions/github-script@v6
       if: github.event_name == 'pull_request_target'
+      uses: actions/github-script@v6
       with:
         github-token: ${{ github.token }}
         script: |
