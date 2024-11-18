@@ -108,24 +108,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Reset branch to remote state
-        run: |
-          git fetch origin ${{ github.ref_name }}
-          git reset --hard origin/${{ github.ref_name }}
-
-      - name: Make changes to pull request
-        run: date +%s > report.txt
-
-      - name: Commit changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add report.txt
-          git commit -m "Update report"
-
-      - name: Force push to remote branch
-        run: git push --force origin ${{ github.ref_name }}
-
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v7
