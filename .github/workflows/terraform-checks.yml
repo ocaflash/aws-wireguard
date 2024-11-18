@@ -60,30 +60,6 @@ jobs:
         echo "tflint found warnings. Failing the workflow."
         exit 1
 
-    - name: Comment on PR with tflint results
-      if: github.event_name == 'pull_request_target'
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ github.token }}
-        script: |
-          const fs = require('fs');
-          const path = require('path');
-          const tflintOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'tflint_output.txt');
-          const tflintOutput = fs.readFileSync(tflintOutputPath, 'utf8');
-          const output = `#### tflint Results 📖
-          <details><summary>Show Results</summary>
-          \n
-          \`\`\`\n
-          ${tflintOutput}
-          \`\`\`
-          </details>`;
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: output
-          });
-
     - name: Terraform Format
       run: terraform fmt -check
 
@@ -97,6 +73,10 @@ jobs:
       if: github.event_name == 'pull_request_target'
       run: terraform plan -no-color
       id: plan
+
+    - name: Print github.event_name
+      run: |
+        echo "github.event_name: ${{ github.event_name }}"
 
     - name: Comment on PR with Terraform Plan
       if: github.event_name == 'pull_request_target'
