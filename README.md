@@ -46,7 +46,10 @@ No modules.
 | [aws_instance.wireguard](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_s3_bucket.backup](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
 | [aws_s3_bucket_acl.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_acl) | resource |
+| [aws_s3_bucket_ownership_controls.backup](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_ownership_controls) | resource |
 | [aws_security_group.wireguard](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
+| [aws_ssm_association.wireguard_reset_password_association](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_association) | resource |
+| [aws_ssm_document.wireguard_reset_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ssm_document) | resource |
 | [random_id.project_uuid](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 | [random_id.uuid_interface](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 | [random_integer.client_port](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
@@ -58,12 +61,13 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_iam_role_name"></a> [iam\_role\_name](#input\_iam\_role\_name) | IAM role name | `string` | `"EC2ToS3Access"` | no |
+| <a name="input_iam_role_name"></a> [iam\_role\_name](#input\_iam\_role\_name) | IAM role name | `string` | `"EC2ToS3Access-wireguard"` | no |
 | <a name="input_iam_role_path"></a> [iam\_role\_path](#input\_iam\_role\_path) | IAM role path | `string` | `"/"` | no |
 | <a name="input_iam_role_policy_attachment"></a> [iam\_role\_policy\_attachment](#input\_iam\_role\_policy\_attachment) | List of IAM policies | `list(string)` | <pre>[<br>  "arn:aws:iam::aws:policy/AmazonEC2FullAccess",<br>  "arn:aws:iam::aws:policy/AmazonS3FullAccess"<br>]</pre> | no |
 | <a name="input_ip_address_int"></a> [ip\_address\_int](#input\_ip\_address\_int) | IP address for Wireguard interface | `string` | `"192.168.10.2"` | no |
 | <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix) | Prefix to be used in the naming of some of the created AWS resources | `string` | `"wireguard"` | no |
-| <a name="input_region"></a> [region](#input\_region) | Region to be used for AWS resources | `string` | `"eu-central-1"` | no |
+| <a name="input_region"></a> [region](#input\_region) | Region to be used for AWS resources | `string` | `"ap-south-1"` | no |
+| <a name="input_ssm_access_policy_name"></a> [ssm\_access\_policy\_name](#input\_ssm\_access\_policy\_name) | The name of the IAM policy for accessing Parameter Store | `string` | `"SSMAccessPolicy-wireguard"` | no |
 
 ## Outputs
 
