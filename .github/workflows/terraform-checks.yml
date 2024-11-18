@@ -39,7 +39,6 @@ jobs:
       id: tflint
       run: |
         tflint > tflint_output.txt || true
-        echo "tflint_output=$(cat tflint_output.txt)" >> $GITHUB_ENV
 
     - name: Comment on PR with tflint results
       uses: actions/github-script@v6
@@ -47,11 +46,15 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
+          const fs = require('fs');
+          const path = require('path');
+          const tflintOutputPath = path.join(process.env.GITHUB_WORKSPACE, 'tflint_output.txt');
+          const tflintOutput = fs.readFileSync(tflintOutputPath, 'utf8');
           const output = `#### tflint Results 📖
           <details><summary>Show Results</summary>
           \n
           \`\`\`\n
-          ${{ env.tflint_output }}
+          ${tflintOutput}
           \`\`\`
           </details>`;
           github.rest.issues.createComment({
