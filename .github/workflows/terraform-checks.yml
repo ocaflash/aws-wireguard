@@ -108,27 +108,29 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get Current Branch
+        id: branch
+        run: |
+          current_branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          echo "current_branch=$current_branch" >> $GITHUB_OUTPUT
+
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: Update Terraform configuration
+          commit-message: Update from ${{ steps.branch.outputs.current_branch }}
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          signoff: false
-          branch: ${{ github.ref }}
+          base: master
+          branch: ${{ steps.branch.outputs.current_branch }}
           delete-branch: false
-          title: 'Terraform Configuration Updates'
+          title: 'Merge ${{ steps.branch.outputs.current_branch }} into master'
           body: |
-            Automated pull request created after successful Terraform checks
-            - Ran tflint
-            - Validated Terraform configuration
-            - Formatted Terraform files
+            Automated pull request to merge current feature branch into master
+            - Terraform configuration checked and validated
+            - All CI checks passed
           assignees: ${{ github.actor }}
           reviewers: ${{ github.actor }}
-          team-reviewers: |
-            owners
-            maintainers
           draft: false
 
       - name: Check Pull Request Creation Status
@@ -136,7 +138,3 @@ jobs:
         run: |
           echo "Pull Request Created - Number: ${{ steps.cpr.outputs.pull-request-number }}"
           echo "Pull Request URL: ${{ steps.cpr.outputs.pull-request-url }}"
-
-
-
-
