@@ -71,20 +71,20 @@ jobs:
     - name: Check Token Permissions
       uses: actions/github-script@v6
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const { token } = context;
-          console.log('Current Token Information:');
+          console.log('Current Context:');
           console.log('Repository:', context.repo.repo);
           console.log('Owner:', context.repo.owner);
           console.log('Ref:', context.ref);
+          console.log('Actor:', context.actor);
 
           try {
-            const permissions = await github.rest.repos.getCollaboratorPermissionLevel({
+            const tokenPermissions = await github.rest.permissions.get({
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              username: context.actor
+              repo: context.repo.repo
             });
-            console.log('Repository Permissions:', permissions.data.permission);
+            console.log('Token Permissions:', tokenPermissions.data);
           } catch (error) {
             console.error('Error fetching permissions:', error);
           }
