@@ -2,9 +2,11 @@ name: "Terraform Checks"
 
 on:
   push:
-    branches: [ '*' ]
+    branches-ignore:
+      - master
   pull_request:
-    branches: [ '*' ]
+    branches-ignore:
+      - master
 
 jobs:
   terraform-checks:
