@@ -107,4 +107,8 @@ jobs:
               head: currentBranch,
               base: 'master',
               body: 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully'
+<<<<<<< HEAD
             });
+=======
+            });
+>>>>>>> master
