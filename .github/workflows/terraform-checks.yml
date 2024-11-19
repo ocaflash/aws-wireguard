@@ -56,7 +56,6 @@ jobs:
             echo "has_warnings=true" >> "$GITHUB_OUTPUT"
             {
               echo "warnings<<EOWARN"
-              # Экранируем специальные символы и форматируем вывод
               echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | \
                 sed 's/`/'\''/g' | \
                 sed 's/\\/\\\\/g' | \
@@ -98,15 +97,13 @@ jobs:
       - name: Construct PR Body
         id: construct_pr_body
         run: |
-            pr_body="Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n"
-            if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
-              warnings=$(echo -e "${{ needs.terraform-checks.outputs.tflint_warnings }}" | sed 's/\\n/\n/g')
-              pr_body+="### ⚠️ TFLint Warnings:\n\`\`\`\n$warnings\n\`\`\`\n\nPlease review these warnings before merging.\n"
-            fi
-            pr_body+="_Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_"
-            echo "pr_body<<EOF" >> $GITHUB_ENV
-            echo -e "$pr_body" >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
+          pr_body="Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n"
+          if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
+            warnings=$(echo -e "${{ needs.terraform-checks.outputs.tflint_warnings }}" | sed '/^$/d' | sed 's/\\n/\n/g')
+            pr_body+="### ⚠️ TFLint Warnings:\n\`\`\`\n$warnings\n\`\`\`\n\nPlease review these warnings before merging.\n"
+          fi
+          pr_body+="_Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_"
+          echo "pr_body=$pr_body" >> $GITHUB_ENV
 
       - name: Check if PR exists
         id: check_pr
