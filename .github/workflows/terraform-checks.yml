@@ -56,21 +56,14 @@ jobs:
               echo "has_warnings=true" >> "$GITHUB_OUTPUT"
               {
                 echo "warnings<<EOWARN"
-                # Экранируем специальные символы и форматируем вывод
-                separator_length=40  # Установите желаемую длину тонкого разделителя
+                separator_length=40
                 separator=$(printf '%.0s-' $(seq 1 $separator_length))
-            
-                # Добавляем сепаратор перед сообщением
-                echo "$separator"
-                echo "Please review these warnings before merging."
-            
                 while IFS= read -r line; do
                   if [[ $line == Warning:* ]]; then
-                    # Убираем слово Warning:
                     line_without_warning=$(echo "$line" | sed 's/^Warning: //')
                     if [[ -n $current_warning ]]; then
                       echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                      echo "$separator"
+                      
                     fi
                     current_warning="**Warning:** $line_without_warning"
                   elif [[ $line == Reference:* ]]; then
@@ -80,6 +73,7 @@ jobs:
                     current_warning=""
                   else
                     current_warning+="\n$line"
+                    echo "$separator"
                   fi
                 done <<< "$TFLINT_OUTPUT"
                 echo "EOWARN"
