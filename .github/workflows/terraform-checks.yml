@@ -56,7 +56,12 @@ jobs:
             echo "has_warnings=true" >> "$GITHUB_OUTPUT"
             {
               echo "warnings<<EOWARN"
-              echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | sed 's/`/'"'"'/g' | sed 's/$/\\n/'
+              # Экранируем специальные символы и форматируем вывод
+              echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | \
+                sed 's/`/'\''/g' | \
+                sed 's/\\/\\\\/g' | \
+                sed 's/"/\\"/g' | \
+                sed 's/$/\\n/'
               echo "EOWARN"
             } >> "$GITHUB_OUTPUT"
           else
@@ -95,18 +100,23 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { repo, owner } = context.repo;
-            const currentBranch = context.ref.replace('refs/heads/', '');  
-            let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';  
-            const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
-            if (hasWarnings) {
-              const warnings = '${{ needs.terraform-checks.outputs.tflint_warnings }}'
-                .replace(/\\n/g, '\n')
-                .replace(/\\"/g, '"')
-                .replace(/`/g, "'");
-              prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
-              prBody += 'Please review these warnings before merging.\n';
-            }
+              const { repo, owner } = context.repo;
+              const currentBranch = context.ref.replace('refs/heads/', '');
+              
+              let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';
+              
+              const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
+              if (hasWarnings) {
+                // Используем JSON.stringify для безопасной обработки строки
+                const warningsRaw = '${{ needs.terraform-checks.outputs.tflint_warnings }}';
+                const warnings = JSON.parse(JSON.stringify(warningsRaw))
+                  .replace(/\\n/g, '\n')
+                  .replace(/\\"/g, '"')
+                  .replace(/`/g, "'");
+              
+                prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
+                prBody += 'Please review these warnings before merging.\n';
+              }
               
               // Поиск существующего PR
               const existingPRs = await github.rest.pulls.list({
