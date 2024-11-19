@@ -1,4 +1,3 @@
-
 name: "Terraform Checks and PR Creation"
 
 on:
@@ -10,6 +9,10 @@ jobs:
   terraform-checks:
     name: "Terraform Checks"
     runs-on: ubuntu-latest
+
+    outputs:
+      tflint_warnings: ${{ steps.tflint.outputs.warnings }}
+      has_warnings: ${{ steps.tflint.outputs.has_warnings }}
 
     permissions:
       contents: write
@@ -40,28 +43,22 @@ jobs:
     - name: Run tflint
       id: tflint
       run: |
-        tflint > tflint_output.txt || true
-        TF_LINT_OUTPUT=$(cat tflint_output.txt)
-        echo "TF_LINT_OUTPUT<<EOF" >> $GITHUB_ENV
-        echo "$TF_LINT_OUTPUT" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-        if grep -q "Warning:" tflint_output.txt; then
-          echo "TF_LINT_WARNINGS=true" >> $GITHUB_ENV
+        TFLINT_OUTPUT=$(tflint)
+        echo "$TFLINT_OUTPUT"
+        
+        if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
+          WARNINGS=$(echo "$TFLINT_OUTPUT" | grep "Warning:")
+          echo "warnings<<EOF" >> $GITHUB_OUTPUT
+          echo "$WARNINGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "has_warnings=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_warnings=false" >> $GITHUB_OUTPUT
         fi
-        if grep -q "Error:" tflint_output.txt; then
-          echo "TF_LINT_ERRORS=true" >> $GITHUB_ENV
+        
+        if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
+          exit 1
         fi
-
-    - name: Print tflint results to console
-      run: |
-        echo "tflint results:"
-        echo "$TF_LINT_OUTPUT"
-
-    - name: Fail if tflint warnings
-      if: env.TF_LINT_WARNINGS == 'true'
-      run: |
-        echo "tflint found warnings. Failing the workflow."
-        exit 1
 
     - name: Terraform Format
       run: terraform fmt -check
@@ -112,11 +109,18 @@ jobs:
             const { repo, owner } = context.repo;
             const currentBranch = context.ref.replace('refs/heads/', '');
             
+            let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';
+            
+            if ('${{ needs.terraform-checks.outputs.has_warnings }}' === 'true') {
+              prBody += '### ⚠️ TFLint Warnings:\n```\n${{ needs.terraform-checks.outputs.tflint_warnings }}\n```\n\n';
+              prBody += 'Please review these warnings before merging.\n';
+            }
+            
             await github.rest.pulls.create({
               owner,
               repo,
               title: `Review: Changes in ${currentBranch}`,
               head: currentBranch,
               base: 'master',
-              body: 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully'
+              body: prBody
             });
