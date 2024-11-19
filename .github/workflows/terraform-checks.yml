@@ -44,48 +44,54 @@ jobs:
         id: tflint
         shell: bash
         run: |
-          set +e
-          TFLINT_OUTPUT=$(tflint)
-          TFLINT_EXIT_CODE=$?
-          set -e
-
-          echo "TFLint output:"
-          echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
-
-          if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
-            echo "has_warnings=true" >> "$GITHUB_OUTPUT"
-            {
-              echo "warnings<<EOWARN"
-              # Экранируем специальные символы и форматируем вывод
-              separator_length=80  # Установите желаемую длину разделителя
-              separator=$(printf '%.0s_' $(seq 1 $separator_length))
-
-              while IFS= read -r line; do
-                if [[ $line == Warning:* ]]; then
-                  if [[ -n $current_warning ]]; then
+            set +e
+            TFLINT_OUTPUT=$(tflint)
+            TFLINT_EXIT_CODE=$?
+            set -e
+            
+            echo "TFLint output:"
+            echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
+            
+            if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
+              echo "has_warnings=true" >> "$GITHUB_OUTPUT"
+              {
+                echo "warnings<<EOWARN"
+                # Экранируем специальные символы и форматируем вывод
+                separator_length=40  # Установите желаемую длину тонкого разделителя
+                separator=$(printf '%.0s-' $(seq 1 $separator_length))
+            
+                # Добавляем сепаратор перед сообщением
+                echo "$separator"
+                echo "Please review these warnings before merging."
+            
+                while IFS= read -r line; do
+                  if [[ $line == Warning:* ]]; then
+                    # Убираем слово Warning:
+                    line_without_warning=$(echo "$line" | sed 's/^Warning: //')
+                    if [[ -n $current_warning ]]; then
+                      echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                      echo "$separator"
+                    fi
+                    current_warning="**Warning:** $line_without_warning"
+                  elif [[ $line == Reference:* ]]; then
+                    reference_url=$(echo "$line" | sed 's/.*https/https/')
+                    current_warning+="\n**Reference:** [$reference_url]($reference_url)"
                     echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                    echo "$separator"
+                    current_warning=""
+                  else
+                    current_warning+="\n$line"
                   fi
-                  current_warning="**Warning:** $line"
-                elif [[ $line == Reference:* ]]; then
-                  reference_url=$(echo "$line" | sed 's/.*https/https/')
-                  current_warning+="\n**Reference:** [$reference_url]($reference_url)"
-                  echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                  current_warning=""
-                else
-                  current_warning+="\n$line"
-                fi
-              done <<< "$TFLINT_OUTPUT"
-              echo "EOWARN"
-            } >> "$GITHUB_OUTPUT"
-          else
-            echo "has_warnings=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
-            exit 1
-          fi
-          exit 0
+                done <<< "$TFLINT_OUTPUT"
+                echo "EOWARN"
+              } >> "$GITHUB_OUTPUT"
+            else
+              echo "has_warnings=false" >> "$GITHUB_OUTPUT"
+            fi
+            
+            if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
+              exit 1
+            fi
+            exit 0
 
       - name: Terraform Format
         run: terraform fmt -check
