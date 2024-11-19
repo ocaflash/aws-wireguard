@@ -21,4 +21,11 @@ terraform {
 
 provider "aws" {
   region = var.region
+
+  default_tags {
+    tags = {
+      Project     = "WireGuard VPN"
+      ProjectUUID = random_id.project_uuid.hex
+    }
+  }
 }

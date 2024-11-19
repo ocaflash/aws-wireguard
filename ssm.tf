@@ -31,7 +31,7 @@ resource "aws_ssm_association" "wireguard_reset_password_association" {
 
   targets {
     key    = "tag:Name"
-    values = ["${var.name_prefix} VPN Instance"]
+    values = ["${var.name_prefix} VPN"]
   }
 
   automation_target_parameter_name = "InstanceId"

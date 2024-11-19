@@ -18,11 +18,6 @@ resource "aws_instance" "wireguard" {
   instance_type        = "t3a.micro"
   iam_instance_profile = aws_iam_instance_profile.ec2_s3_role.name
 
-  tags = {
-    "Name"         = "${var.name_prefix} VPN Instance"
-    "Project UUID" = random_id.project_uuid.hex
-  }
-
   vpc_security_group_ids = [aws_security_group.wireguard.id]
 
   user_data = templatefile("resources/cloud-init.yaml.tpl",
