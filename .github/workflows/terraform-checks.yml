@@ -113,17 +113,21 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const { data: pullRequests } = await github.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "open",
-              head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
-            });
-            if (pullRequests.length > 0) {
-              core.setOutput("pr_exists", "true");
-              core.setOutput("pr_number", pullRequests[0].number);
-            } else {
-              core.setOutput("pr_exists", "false");
+            try {
+              const { data: pullRequests } = await github.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: "open",
+                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
+              });
+              if (pullRequests.length > 0) {
+                core.setOutput("pr_exists", "true");
+                core.setOutput("pr_number", pullRequests[0].number);
+              } else {
+                core.setOutput("pr_exists", "false");
+              }
+            } catch (error) {
+              core.setFailed(`Failed to check for existing PR: ${error.message}`);
             }
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
