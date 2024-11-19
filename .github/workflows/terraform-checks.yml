@@ -136,12 +136,16 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            await github.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: parseInt(process.env.PR_NUMBER, 10),
-              body: process.env.pr_body,
-            });
+            try {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: parseInt(process.env.PR_NUMBER, 10),
+                body: process.env.pr_body,
+              });
+            } catch (error) {
+              core.setFailed(`Failed to update PR: ${error.message}`);
+            }
         env:
           PR_NUMBER: ${{ steps.check_pr.outputs.pr_number }}
           pr_body: ${{ env.pr_body }}
