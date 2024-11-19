@@ -57,11 +57,14 @@ jobs:
             {
               echo "warnings<<EOWARN"
               # Экранируем специальные символы и форматируем вывод
+              separator_length=80  # Установите желаемую длину разделителя
+              separator=$(printf '%.0s_' $(seq 1 $separator_length))
+
               while IFS= read -r line; do
                 if [[ $line == Warning:* ]]; then
                   if [[ -n $current_warning ]]; then
                     echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                    echo ""
+                    echo "$separator"
                   fi
                   current_warning="**Warning:** $line"
                 elif [[ $line == Reference:* ]]; then
