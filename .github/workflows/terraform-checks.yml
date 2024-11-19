@@ -95,6 +95,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Capture and Inspect tflint_warnings
+        run: |
+          echo "tflint_warnings: ${{ needs.terraform-checks.outputs.tflint_warnings }}"
+
       - name: Create or Update Pull Request
         uses: actions/github-script@v6
         with:
