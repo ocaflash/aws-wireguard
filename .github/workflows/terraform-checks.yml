@@ -62,10 +62,10 @@ jobs:
                   if [[ -n $current_warning ]]; then
                     echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
                   fi
-                  current_warning="**$line**"
+                  current_warning="<strong style=\"color: brown;\">$line</strong>"
                 elif [[ $line == Reference:* ]]; then
                   reference_url=$(echo "$line" | sed 's/.*https/https/')
-                  current_warning+="\n**Reference:** [$reference_url]($reference_url)"
+                  current_warning+="\n<strong style=\"color: blue;\">Reference:</strong> <a href=\"$reference_url\">$reference_url</a>"
                   echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
                   current_warning=""
                 else
