@@ -95,11 +95,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check for Special Characters in tflint_warnings
+      - name: Capture and Inspect tflint_warnings
         run: |
           echo "tflint_warnings: ${{ needs.terraform-checks.outputs.tflint_warnings }}"
-          echo "Checking for special characters..."
-          echo "${{ needs.terraform-checks.outputs.tflint_warnings }}" | grep -P '[^\x00-\x7F]'
 
       - name: Create or Update Pull Request
         uses: actions/github-script@v6
@@ -115,10 +113,14 @@ jobs:
             if (hasWarnings) {
               // Используем JSON.stringify для безопасной обработки строки
               const warningsRaw = '${{ needs.terraform-checks.outputs.tflint_warnings }}';
+              console.log(`Raw warnings: ${warningsRaw}`);
+            
               const warnings = JSON.parse(JSON.stringify(warningsRaw))
                 .replace(/\\n/g, '\n')
                 .replace(/\\"/g, '"')
                 .replace(/`/g, "'");
+            
+              console.log(`Processed warnings: ${warnings}`);
             
               prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
               prBody += 'Please review these warnings before merging.\n';
