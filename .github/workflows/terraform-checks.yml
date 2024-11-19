@@ -71,6 +71,7 @@ jobs:
                   reference_url=$(echo "$line" | sed 's/.*https/https/')
                   current_warning+="\n**Reference:** [$reference_url]($reference_url)"
                   echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                  echo "$separator"
                   current_warning=""
                 else
                   current_warning+="\n$line"
