@@ -63,7 +63,7 @@ jobs:
                     echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
                     echo ""
                   fi
-                  current_warning="**$line**"
+                  current_warning="**Warning:** $line"
                 elif [[ $line == Reference:* ]]; then
                   reference_url=$(echo "$line" | sed 's/.*https/https/')
                   current_warning+="\n**Reference:** [$reference_url]($reference_url)"
