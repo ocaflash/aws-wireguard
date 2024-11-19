@@ -56,14 +56,16 @@ jobs:
             echo "has_warnings=true" >> "$GITHUB_OUTPUT"
             {
               echo "warnings<<EOWARN"
+              # Экранируем специальные символы и форматируем вывод
               while IFS= read -r line; do
                 if [[ $line == Warning:* ]]; then
                   if [[ -n $current_warning ]]; then
                     echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
                   fi
-                  current_warning="$line"
+                  current_warning="**$line**"
                 elif [[ $line == Reference:* ]]; then
-                  current_warning+="\n$line"
+                  reference_url=$(echo "$line" | sed 's/.*https/https/')
+                  current_warning+="\n**Reference:** [$reference_url]($reference_url)"
                   echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
                   current_warning=""
                 else
