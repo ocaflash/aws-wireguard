@@ -2,11 +2,6 @@ resource "aws_security_group" "wireguard" {
   name        = "${var.name_prefix}-sg-vpn"
   description = "Wireguard security group"
 
-  tags = {
-    "Name"         = "${var.name_prefix} TCP/UDP Access"
-    "Project UUID" = random_id.project_uuid.hex
-  }
-
   ingress {
     protocol    = "udp"
     from_port   = random_integer.client_port.result

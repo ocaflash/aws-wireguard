@@ -1,7 +1,7 @@
 variable "name_prefix" {
   type        = string
   description = "Prefix to be used in the naming of some of the created AWS resources"
-  default     = "wireguard"
+  default     = "Wireguard"
 }
 
 variable "region" {
