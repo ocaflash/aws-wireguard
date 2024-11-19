@@ -95,64 +95,24 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Capture and Inspect tflint_warnings
-        run: |
-          echo "tflint_warnings: ${{ needs.terraform-checks.outputs.tflint_warnings }}"
-
       - name: Create or Update Pull Request
-        uses: actions/github-script@v6
+        uses: diillson/auto-pull-request@v1.0.1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { repo, owner } = context.repo;
-            const currentBranch = context.ref.replace('refs/heads/', '');
-            
-            let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';
-            
-            const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
-            if (hasWarnings) {
-              // Используем JSON.stringify для безопасной обработки строки
-              const warningsRaw = '${{ needs.terraform-checks.outputs.tflint_warnings }}';
-              console.log(`Raw warnings: ${warningsRaw}`);
-            
-              const warnings = JSON.parse(JSON.stringify(warningsRaw))
-                .replace(/\\n/g, '\n')
-                .replace(/\\"/g, '"')
-                .replace(/`/g, "'");
-            
-              console.log(`Processed warnings: ${warnings}`);
-            
-              prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
-              prBody += 'Please review these warnings before merging.\n';
-            }
-            
-            // Поиск существующего PR
-            const existingPRs = await github.rest.pulls.list({
-              owner,
-              repo,
-              head: `${owner}:${currentBranch}`,
-              state: 'open'
-            });
-            
-            if (existingPRs.data.length > 0) {
-              // Обновляем существующий PR
-              const pr = existingPRs.data[0];
-              await github.rest.pulls.update({
-                owner,
-                repo,
-                pull_number: pr.number,
-                body: prBody
-              });
-              console.log(`Updated existing PR #${pr.number}`);
-            } else {
-              // Создаем новый PR
-              const newPR = await github.rest.pulls.create({
-                owner,
-                repo,
-                title: `Review: Changes in ${currentBranch}`,
-                head: currentBranch,
-                base: 'master',
-                body: prBody
-              });
-              console.log(`Created new PR #${newPR.data.number}`);
-            }
+          source_branch: ${{ github.ref }}
+          destination_branch: "master"
+          pr_title: "Review: Changes in ${{ github.ref }}"
+          pr_body: |
+            Automated pull request for code review
+            - Terraform configuration validated
+            - CI checks completed successfully
+
+            ${{ needs.terraform-checks.outputs.has_warnings == 'true' && '### ⚠️ TFLint Warnings:\n```\n' + needs.terraform-checks.outputs.tflint_warnings + '\n```\n\nPlease review these warnings before merging.' || '' }}
+
+            _Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_
+          pr_reviewer: "diillson,worker"
+          pr_assignee: "diillson,worker"
+          pr_label: "auto-pr"
+          pr_milestone: "Milestone 1"
+          pr_draft: true
+          pr_allow_empty: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
