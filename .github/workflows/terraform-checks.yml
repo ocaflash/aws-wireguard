@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      tflint_warnings: ${{ steps.tflint.outputs.warnings }}
+      tflint_warnings: ${{ steps.format_output.outputs.warnings }}
       has_warnings: ${{ steps.tflint.outputs.has_warnings }}
 
     permissions:
@@ -44,31 +44,34 @@ jobs:
       id: tflint
       shell: bash
       run: |
-        set +e  # Отключаем автоматическое завершение при ошибках
+        set +e
         TFLINT_OUTPUT=$(tflint)
         TFLINT_EXIT_CODE=$?
-        set -e  # Включаем обратно автоматическое завершение при ошибках
+        set -e
         
-        echo "$TFLINT_OUTPUT"
+        echo "TFLint output:"
+        echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
         
         if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
-          WARNINGS=$(echo "$TFLINT_OUTPUT" | grep "Warning:")
-          echo "warnings<<EOF" >> $GITHUB_OUTPUT
-          echo "$WARNINGS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
           echo "has_warnings=true" >> $GITHUB_OUTPUT
+          echo "raw_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$TFLINT_OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
         else
           echo "has_warnings=false" >> $GITHUB_OUTPUT
         fi
         
-        # Проверяем есть ли ошибки и завершаем скрипт с ошибкой только если есть Error
         if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
           exit 1
         fi
-        
-        # Если код возврата tflint был не 0, но ошибок нет (только warnings), 
-        # всё равно продолжаем выполнение
         exit 0
+
+    - name: Format tflint output
+      if: steps.tflint.outputs.has_warnings == 'true'
+      id: format_output
+      run: |
+        WARNINGS=$(echo '${{ steps.tflint.outputs.raw_output }}' | grep "Warning:" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+        echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
 
     - name: Terraform Format
       run: terraform fmt -check
@@ -78,25 +81,6 @@ jobs:
 
     - name: Terraform Validate
       run: terraform validate
-
-    - name: Check Token Permissions
-      uses: actions/github-script@v6
-      with:
-        script: |
-          console.log('Current Context:');
-          console.log('Repository:', context.repo.repo);
-          console.log('Owner:', context.repo.owner);
-          console.log('Ref:', context.ref);
-          console.log('Actor:', context.actor);
-
-          try {
-            const tokenPermissions = await github.rest.repos.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-          } catch (error) {
-            console.error('Error fetching repository details:', error);
-          }
 
   createPullRequest:
     name: Create Pull Request
@@ -121,8 +105,10 @@ jobs:
             
             let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';
             
-            if ('${{ needs.terraform-checks.outputs.has_warnings }}' === 'true') {
-              prBody += '### ⚠️ TFLint Warnings:\n```\n${{ needs.terraform-checks.outputs.tflint_warnings }}\n```\n\n';
+            const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
+            if (hasWarnings) {
+              const warnings = `${{ needs.terraform-checks.outputs.tflint_warnings }}`;
+              prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
               prBody += 'Please review these warnings before merging.\n';
             }
             
