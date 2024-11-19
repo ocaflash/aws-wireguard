@@ -100,51 +100,51 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-              const { repo, owner } = context.repo;
-              const currentBranch = context.ref.replace('refs/heads/', '');
-              
-              let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';
-              
-              const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
-              if (hasWarnings) {
-                // Используем JSON.stringify для безопасной обработки строки
-                const warningsRaw = '${{ needs.terraform-checks.outputs.tflint_warnings }}';
-                const warnings = JSON.parse(JSON.stringify(warningsRaw))
-                  .replace(/\\n/g, '\n')
-                  .replace(/\\"/g, '"')
-                  .replace(/`/g, "'");
-              
-                prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
-                prBody += 'Please review these warnings before merging.\n';
-              }
-              
-              // Поиск существующего PR
-              const existingPRs = await github.rest.pulls.list({
+            const { repo, owner } = context.repo;
+            const currentBranch = context.ref.replace('refs/heads/', '');
+            
+            let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';
+            
+            const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
+            if (hasWarnings) {
+              // Используем JSON.stringify для безопасной обработки строки
+              const warningsRaw = '${{ needs.terraform-checks.outputs.tflint_warnings }}';
+              const warnings = JSON.parse(JSON.stringify(warningsRaw))
+                .replace(/\\n/g, '\n')
+                .replace(/\\"/g, '"')
+                .replace(/`/g, "'");
+            
+              prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
+              prBody += 'Please review these warnings before merging.\n';
+            }
+            
+            // Поиск существующего PR
+            const existingPRs = await github.rest.pulls.list({
+              owner,
+              repo,
+              head: `${owner}:${currentBranch}`,
+              state: 'open'
+            });
+            
+            if (existingPRs.data.length > 0) {
+              // Обновляем существующий PR
+              const pr = existingPRs.data[0];
+              await github.rest.pulls.update({
                 owner,
                 repo,
-                head: `${owner}:${currentBranch}`,
-                state: 'open'
+                pull_number: pr.number,
+                body: prBody
               });
-              
-              if (existingPRs.data.length > 0) {
-                // Обновляем существующий PR
-                const pr = existingPRs.data[0];
-                await github.rest.pulls.update({
-                  owner,
-                  repo,
-                  pull_number: pr.number,
-                  body: prBody
-                });
-                console.log(`Updated existing PR #${pr.number}`);
-              } else {
-                // Создаем новый PR
-                const newPR = await github.rest.pulls.create({
-                  owner,
-                  repo,
-                  title: `Review: Changes in ${currentBranch}`,
-                  head: currentBranch,
-                  base: 'master',
-                  body: prBody
-                });
-                console.log(`Created new PR #${newPR.data.number}`);
-              }
+              console.log(`Updated existing PR #${pr.number}`);
+            } else {
+              // Создаем новый PR
+              const newPR = await github.rest.pulls.create({
+                owner,
+                repo,
+                title: `Review: Changes in ${currentBranch}`,
+                head: currentBranch,
+                base: 'master',
+                body: prBody
+              });
+              console.log(`Created new PR #${newPR.data.number}`);
+            }
