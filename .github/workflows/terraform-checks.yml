@@ -56,16 +56,20 @@ jobs:
             echo "has_warnings=true" >> "$GITHUB_OUTPUT"
             {
               echo "warnings<<EOWARN"
-              echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | grep -v -- "--" | \
-                sed 's/`/'\''/g' | \
-                sed 's/\\/\\\\/g' | \
-                sed 's/"/\\"/g' | \
-                sed 's/$/\\n/'
-              echo "$TFLINT_OUTPUT" | grep -A 2 "Reference:" | grep -v -- "--" | \
-                sed 's/`/'\''/g' | \
-                sed 's/\\/\\\\/g' | \
-                sed 's/"/\\"/g' | \
-                sed 's/$/\\n/'
+              while IFS= read -r line; do
+                if [[ $line == Warning:* ]]; then
+                  if [[ -n $current_warning ]]; then
+                    echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                  fi
+                  current_warning="$line"
+                elif [[ $line == Reference:* ]]; then
+                  current_warning+="\n$line"
+                  echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                  current_warning=""
+                else
+                  current_warning+="\n$line"
+                fi
+              done <<< "$TFLINT_OUTPUT"
               echo "EOWARN"
             } >> "$GITHUB_OUTPUT"
           else
