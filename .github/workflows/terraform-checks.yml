@@ -44,44 +44,44 @@ jobs:
         id: tflint
         shell: bash
         run: |
-          set +e
-          TFLINT_OUTPUT=$(tflint)
-          TFLINT_EXIT_CODE=$?
-          set -e
-
-          echo "TFLint output:"
-          echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
-
-          if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
-            echo "has_warnings=true" >> "$GITHUB_OUTPUT"
-            {
-              echo "warnings<<EOWARN"
-              # Экранируем специальные символы и форматируем вывод
-              while IFS= read -r line; do
-                if [[ $line == Warning:* ]]; then
-                  if [[ -n $current_warning ]]; then
+            set +e
+            TFLINT_OUTPUT=$(tflint)
+            TFLINT_EXIT_CODE=$?
+            set -e
+            
+            echo "TFLint output:"
+            echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
+            
+            if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
+              echo "has_warnings=true" >> "$GITHUB_OUTPUT"
+              {
+                echo "warnings<<EOWARN"
+                # Экранируем специальные символы и форматируем вывод
+                while IFS= read -r line; do
+                  if [[ $line == Warning:* ]]; then
+                    if [[ -n $current_warning ]]; then
+                      echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                    fi
+                    current_warning="**Warning:** $line"
+                  elif [[ $line == Reference:* ]]; then
+                    reference_url=$(echo "$line" | sed 's/.*https/https/')
+                    current_warning+="\n**Reference:** [Link to reference]($reference_url)"
                     echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                    current_warning=""
+                  else
+                    current_warning+="\n$line"
                   fi
-                  current_warning="<strong style=\"color: brown;\">$line</strong>"
-                elif [[ $line == Reference:* ]]; then
-                  reference_url=$(echo "$line" | sed 's/.*https/https/')
-                  current_warning+="\n<strong style=\"color: blue;\">Reference:</strong> <a href=\"$reference_url\">$reference_url</a>"
-                  echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                  current_warning=""
-                else
-                  current_warning+="\n$line"
-                fi
-              done <<< "$TFLINT_OUTPUT"
-              echo "EOWARN"
-            } >> "$GITHUB_OUTPUT"
-          else
-            echo "has_warnings=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
-            exit 1
-          fi
-          exit 0
+                done <<< "$TFLINT_OUTPUT"
+                echo "EOWARN"
+              } >> "$GITHUB_OUTPUT"
+            else
+              echo "has_warnings=false" >> "$GITHUB_OUTPUT"
+            fi
+            
+            if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
+              exit 1
+            fi
+            exit 0
 
       - name: Terraform Format
         run: terraform fmt -check
