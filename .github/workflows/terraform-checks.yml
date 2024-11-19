@@ -118,6 +118,5 @@ jobs:
           pr_reviewer: "diillson,worker"
           pr_assignee: "diillson,worker"
           pr_label: "auto-pr"
-          pr_draft: true
           pr_allow_empty: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
