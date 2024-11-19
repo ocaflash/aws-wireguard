@@ -100,8 +100,8 @@ jobs:
         run: |
           pr_body="Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n"
           if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
-            warnings=$(echo "${{ needs.terraform-checks.outputs.tflint_warnings }}" | sed 's/\\n/\n/g')
-            pr_body+="### ⚠️ TFLint Warnings:\n```\n$warnings\n```\n\nPlease review these warnings before merging.\n"
+            warnings=$(echo -e "${{ needs.terraform-checks.outputs.tflint_warnings }}" | sed 's/\\n/\n/g')
+            pr_body+="### ⚠️ TFLint Warnings:\n\`\`\`\n$warnings\n\`\`\`\n\nPlease review these warnings before merging.\n"
           fi
           pr_body+="_Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_"
           echo "pr_body<<EOF" >> $GITHUB_OUTPUT
