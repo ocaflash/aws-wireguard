@@ -73,7 +73,7 @@ jobs:
                   else
                     current_warning+="\n$line"
                   fi
-                echo "$separator"
+                
                 done <<< "$TFLINT_OUTPUT"
                 echo "EOWARN"
               } >> "$GITHUB_OUTPUT"
