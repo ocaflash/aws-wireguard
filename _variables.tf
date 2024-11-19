@@ -31,8 +31,8 @@ variable "iam_role_policy_attachment" {
   ]
 }
 
-variable "ip_address_int" {
-  type        = string
-  description = "IP address for Wireguard interface"
-  default     = "192.168.10.2"
-}
+# variable "ip_address_int" {
+#   type        = string
+#   description = "IP address for Wireguard interface"
+#   default     = "192.168.10.2"
+# }
