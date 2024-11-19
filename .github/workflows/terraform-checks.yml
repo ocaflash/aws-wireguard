@@ -114,15 +114,15 @@ jobs:
         with:
           script: |
             try {
-              const { data: pullRequests } = await github.pulls.list({
+              const pullRequests = await github.rest.pulls.list({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 state: "open",
                 head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
               });
-              if (pullRequests.length > 0) {
+              if (pullRequests.data.length > 0) {
                 core.setOutput("pr_exists", "true");
-                core.setOutput("pr_number", pullRequests[0].number);
+                core.setOutput("pr_number", pullRequests.data[0].number);
               } else {
                 core.setOutput("pr_exists", "false");
               }
