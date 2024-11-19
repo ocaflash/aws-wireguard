@@ -95,24 +95,28 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Construct PR Body
+        id: construct_pr_body
+        run: |
+          pr_body="Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n"
+          if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
+            pr_body+="### ⚠️ TFLint Warnings:\n```\n${{ needs.terraform-checks.outputs.tflint_warnings }}\n```\n\nPlease review these warnings before merging.\n"
+          fi
+          pr_body+="_Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_"
+          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$pr_body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create or Update Pull Request
         uses: diillson/auto-pull-request@v1.0.1
         with:
           source_branch: ${{ github.ref }}
           destination_branch: "master"
           pr_title: "Review: Changes in ${{ github.ref }}"
-          pr_body: |
-            Automated pull request for code review
-            - Terraform configuration validated
-            - CI checks completed successfully
-
-            ${{ needs.terraform-checks.outputs.has_warnings == 'true' && '### ⚠️ TFLint Warnings:\n```\n' + needs.terraform-checks.outputs.tflint_warnings + '\n```\n\nPlease review these warnings before merging.' || '' }}
-
-            _Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_
+          pr_body: ${{ steps.construct_pr_body.outputs.pr_body }}
           pr_reviewer: "diillson,worker"
           pr_assignee: "diillson,worker"
           pr_label: "auto-pr"
-          pr_milestone: "Milestone 1"
           pr_draft: true
           pr_allow_empty: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
