@@ -63,7 +63,6 @@ jobs:
                     line_without_warning=$(echo "$line" | sed 's/^Warning: //')
                     if [[ -n $current_warning ]]; then
                       echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                      
                     fi
                     current_warning="**Warning:** $line_without_warning"
                   elif [[ $line == Reference:* ]]; then
@@ -73,8 +72,8 @@ jobs:
                     current_warning=""
                   else
                     current_warning+="\n$line"
-                    echo "$separator"
                   fi
+                echo "$separator"
                 done <<< "$TFLINT_OUTPUT"
                 echo "EOWARN"
               } >> "$GITHUB_OUTPUT"
