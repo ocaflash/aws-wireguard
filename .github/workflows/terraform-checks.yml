@@ -99,11 +99,20 @@ jobs:
         run: |
           pr_body="Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n"
           if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
-            warnings=$(echo -e "${{ needs.terraform-checks.outputs.tflint_warnings }}" | sed '/^$/d' | sed 's/\\n/\n/g')
+            # Define the warning messages
+            warnings="Warning: 'iam_role_path' variable has no type (terraform_typed_variables)\n\non _variables.tf line 19:\n--\nWarning: 'ip_address_int' variable has no type (terraform_typed_variables)\n\non _variables.tf line 34:\n--"
+
+            # Process warnings, remove empty lines and apply bold yellow to 'Warning'
+            warnings=$(echo -e "$warnings" | sed '/^$/d' | sed 's/\(Warning\)/<span style="color:yellow; font-weight:bold;">\1<\/span>/g')
+
+            # Add the processed warnings to the PR body
             pr_body+="### ⚠️ TFLint Warnings:\n\`\`\`\n$warnings\n\`\`\`\n\nPlease review these warnings before merging.\n"
           fi
           pr_body+="_Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_"
+
+          # Save the PR body to the GitHub environment variable
           echo "pr_body=$pr_body" >> $GITHUB_ENV
+      
 
       - name: Check if PR exists
         id: check_pr
