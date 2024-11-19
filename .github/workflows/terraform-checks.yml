@@ -53,12 +53,14 @@ jobs:
         echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
         
         if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
-          echo "has_warnings=true" >> $GITHUB_OUTPUT
-          echo "warnings<<EOF" >> $GITHUB_OUTPUT
-          echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | sed 's/$/\\n/' | tr -d '\n' >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "has_warnings=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "warnings<<EOWARN"
+            echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | sed 's/$/\\n/'
+            echo "EOWARN"
+          } >> "$GITHUB_OUTPUT"
         else
-          echo "has_warnings=false" >> $GITHUB_OUTPUT
+          echo "has_warnings=false" >> "$GITHUB_OUTPUT"
         fi
         
         if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
