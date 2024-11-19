@@ -44,29 +44,29 @@ jobs:
       id: tflint
       shell: bash
       run: |
-        set +e
-        TFLINT_OUTPUT=$(tflint)
-        TFLINT_EXIT_CODE=$?
-        set -e
-        
-        echo "TFLint output:"
-        echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
-        
-        if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
-          echo "has_warnings=true" >> "$GITHUB_OUTPUT"
-          {
-            echo "warnings<<EOWARN"
-            echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | sed 's/$/\\n/'
-            echo "EOWARN"
-          } >> "$GITHUB_OUTPUT"
-        else
-          echo "has_warnings=false" >> "$GITHUB_OUTPUT"
-        fi
-        
-        if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
-          exit 1
-        fi
-        exit 0
+          set +e
+          TFLINT_OUTPUT=$(tflint)
+          TFLINT_EXIT_CODE=$?
+          set -e
+          
+          echo "TFLint output:"
+          echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
+          
+          if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
+            echo "has_warnings=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "warnings<<EOWARN"
+              echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | sed 's/`/'"'"'/g' | sed 's/$/\\n/'
+              echo "EOWARN"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "has_warnings=false" >> "$GITHUB_OUTPUT"
+          fi
+          
+          if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
+            exit 1
+          fi
+          exit 0
 
     - name: Terraform Format
       run: terraform fmt -check
