@@ -83,7 +83,7 @@ jobs:
       run: terraform validate
 
   createPullRequest:
-    name: Create Pull Request
+    name: Create or Update Pull Request
     runs-on: ubuntu-latest
     needs:
       - terraform-checks
@@ -104,19 +104,58 @@ jobs:
             pr_body+="### ⚠️ TFLint Warnings:\n\`\`\`\n$warnings\n\`\`\`\n\nPlease review these warnings before merging.\n"
           fi
           pr_body+="_Created by [diillson/auto-pull-request](https://github.com/diillson/auto-pull-request)_"
-          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$pr_body" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "pr_body=$pr_body" >> $GITHUB_ENV
 
-      - name: Create or Update Pull Request
-        uses: diillson/auto-pull-request@v1.0.1
+      - name: Check if PR exists
+        id: check_pr
+        uses: actions/github-script@v6
         with:
-          source_branch: ${{ github.ref }}
-          destination_branch: "master"
-          pr_title: "Review: Changes in ${{ github.ref }}"
-          pr_body: ${{ steps.construct_pr_body.outputs.pr_body }}
-          pr_reviewer: "diillson,worker"
-          pr_assignee: "diillson,worker"
-          pr_label: "auto-pr"
-          pr_allow_empty: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pullRequests } = await github.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
+            });
+            if (pullRequests.length > 0) {
+              core.setOutput("pr_exists", "true");
+              core.setOutput("pr_number", pullRequests[0].number);
+            } else {
+              core.setOutput("pr_exists", "false");
+            }
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update PR Body if Exists
+        if: steps.check_pr.outputs.pr_exists == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt(process.env.PR_NUMBER, 10),
+              body: process.env.pr_body,
+            });
+          env:
+            PR_NUMBER: ${{ steps.check_pr.outputs.pr_number }}
+            pr_body: ${{ env.pr_body }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create PR if Not Exists
+        if: steps.check_pr.outputs.pr_exists == 'false'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: pr } = await github.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "Review: Changes in ${context.ref}",
+              head: context.ref.replace('refs/heads/', ''),
+              base: "master",
+              body: process.env.pr_body,
+            });
+            core.setOutput("pr_url", pr.html_url);
+          env:
+            pr_body: ${{ env.pr_body }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+  
