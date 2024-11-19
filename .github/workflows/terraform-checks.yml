@@ -95,10 +95,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Capture and Inspect tflint_warnings
-        run: |
-          echo "tflint_warnings: ${{ needs.terraform-checks.outputs.tflint_warnings }}"
-
       - name: Create or Update Pull Request
         uses: actions/github-script@v6
         with:
@@ -108,19 +104,6 @@ jobs:
             const currentBranch = context.ref.replace('refs/heads/', '');
             
             let prBody = 'Automated pull request for code review\n- Terraform configuration validated\n- CI checks completed successfully\n\n';
-            
-            const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
-            if (hasWarnings) {
-              // Используем JSON.stringify для безопасной обработки строки
-              const warningsRaw = '${{ needs.terraform-checks.outputs.tflint_warnings }}';
-              const warnings = JSON.parse(JSON.stringify(warningsRaw))
-                .replace(/\\n/g, '\n')
-                .replace(/\\"/g, '"')
-                .replace(/`/g, "'");
-            
-              prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
-              prBody += 'Please review these warnings before merging.\n';
-            }
             
             // Поиск существующего PR
             const existingPRs = await github.rest.pulls.list({
