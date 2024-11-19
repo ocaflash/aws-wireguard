@@ -17,7 +17,7 @@ variable "iam_role_name" {
 }
 
 variable "iam_role_path" {
-
+  type        = string
   description = "IAM role path"
   default     = "/"
 }
