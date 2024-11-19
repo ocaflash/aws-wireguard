@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      tflint_warnings: ${{ steps.format_output.outputs.warnings }}
+      tflint_warnings: ${{ steps.tflint.outputs.warnings }}
       has_warnings: ${{ steps.tflint.outputs.has_warnings }}
 
     permissions:
@@ -54,8 +54,8 @@ jobs:
         
         if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
           echo "has_warnings=true" >> $GITHUB_OUTPUT
-          echo "raw_output<<EOF" >> $GITHUB_OUTPUT
-          echo "$TFLINT_OUTPUT" >> $GITHUB_OUTPUT
+          echo "warnings<<EOF" >> $GITHUB_OUTPUT
+          echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | sed 's/$/\\n/' | tr -d '\n' >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         else
           echo "has_warnings=false" >> $GITHUB_OUTPUT
@@ -65,13 +65,6 @@ jobs:
           exit 1
         fi
         exit 0
-
-    - name: Format tflint output
-      if: steps.tflint.outputs.has_warnings == 'true'
-      id: format_output
-      run: |
-        WARNINGS=$(echo '${{ steps.tflint.outputs.raw_output }}' | grep "Warning:" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-        echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
 
     - name: Terraform Format
       run: terraform fmt -check
@@ -107,7 +100,9 @@ jobs:
             
             const hasWarnings = '${{ needs.terraform-checks.outputs.has_warnings }}' === 'true';
             if (hasWarnings) {
-              const warnings = `${{ needs.terraform-checks.outputs.tflint_warnings }}`;
+              const warnings = `${{ needs.terraform-checks.outputs.tflint_warnings }}`
+                .replace(/\\n/g, '\n')
+                .replace(/\\"/g, '"');
               prBody += '### ⚠️ TFLint Warnings:\n```\n' + warnings + '\n```\n\n';
               prBody += 'Please review these warnings before merging.\n';
             }
