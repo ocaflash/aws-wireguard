@@ -48,16 +48,20 @@ jobs:
           TFLINT_OUTPUT=$(tflint)
           TFLINT_EXIT_CODE=$?
           set -e
-          
+
           echo "TFLint output:"
           echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
-          
+
           if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
             echo "has_warnings=true" >> "$GITHUB_OUTPUT"
             {
               echo "warnings<<EOWARN"
-              # Экранируем специальные символы и форматируем вывод
-              echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | \
+              echo "$TFLINT_OUTPUT" | grep -A 2 "Warning:" | grep -v -- "--" | \
+                sed 's/`/'\''/g' | \
+                sed 's/\\/\\\\/g' | \
+                sed 's/"/\\"/g' | \
+                sed 's/$/\\n/'
+              echo "$TFLINT_OUTPUT" | grep -A 2 "Reference:" | grep -v -- "--" | \
                 sed 's/`/'\''/g' | \
                 sed 's/\\/\\\\/g' | \
                 sed 's/"/\\"/g' | \
@@ -67,7 +71,7 @@ jobs:
           else
             echo "has_warnings=false" >> "$GITHUB_OUTPUT"
           fi
-          
+
           if echo "$TFLINT_OUTPUT" | grep -q "Error:"; then
             exit 1
           fi
