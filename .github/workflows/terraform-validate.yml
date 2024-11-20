@@ -27,11 +27,12 @@ jobs:
     name: "Terraform Validation"
     runs-on: ubuntu-latest
 
+    # Добавляем permissions на уровне job
     permissions:
       contents: read
       pull-requests: write
-      checks: write # Добавлено разрешение для создания check runs
-      statuses: write # Добавлено разрешение для установки status checks
+      checks: write
+      statuses: write
 
     steps:
       - name: Checkout Repository
@@ -49,15 +50,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install TFLint
+      # Добавляем debug информацию для проверки контекста
+      - name: Debug Event Context
         run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event type: ${{ github.event.type }}"
+          echo "Reference: ${{ github.ref }}"
 
       - name: Terraform Format
         id: fmt
-        continue-on-error: true
         run: terraform fmt -check
-        if: github.event_name == 'pull_request'
+        continue-on-error: true
 
       - name: Terraform Init
         id: init
@@ -71,6 +74,8 @@ jobs:
         id: tflint
         shell: bash
         run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          
           set +e
           TFLINT_OUTPUT=$(tflint --format compact)
           TFLINT_EXIT_CODE=$?
@@ -79,7 +84,7 @@ jobs:
           echo "TFLint output:"
           echo "$TFLINT_OUTPUT"
 
-          # Сохраняем результаты для использования в check run
+          # Сохраняем результаты
           {
             echo "output<<EOF"
             echo "$TFLINT_OUTPUT"
@@ -88,117 +93,99 @@ jobs:
 
           echo "exit_code=$TFLINT_EXIT_CODE" >> "$GITHUB_OUTPUT"
 
-          # Форматируем warnings для комментария в PR
+          # Форматируем warnings
           if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
             echo "has_warnings=true" >> "$GITHUB_OUTPUT"
             {
               echo "warnings<<EOWARN"
-              separator_length=40
-              separator=$(printf '%.0s-' $(seq 1 $separator_length))
-              issue_number=1
-              while IFS= read -r line; do
-                if [[ $line == Warning:* ]]; then
-                  line_without_warning=$(echo "$line" | sed 's/^Warning: //')
-                  if [[ -n $current_warning ]]; then
-                    echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                  fi
-                  current_warning="**$issue_number).** **Warning:** $line_without_warning"
-                  issue_number=$((issue_number + 1))
-                elif [[ $line == Reference:* ]]; then
-                  reference_url=$(echo "$line" | sed 's/.*https/https/')
-                  current_warning+="\n**Reference:** [$reference_url]($reference_url)"
-                  echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
-                  echo "$separator"
-                  current_warning=""
-                else
-                  current_warning+="\n$line"
-                fi
-              done <<< "$TFLINT_OUTPUT"
+              echo "$TFLINT_OUTPUT"
               echo "EOWARN"
             } >> "$GITHUB_OUTPUT"
           else
             echo "has_warnings=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Update Check Run
-        if: github.event_name == 'pull_request'
+      # Обновляем status check для всех событий
+      - name: Update Check Status
         uses: actions/github-script@v7
         with:
           script: |
-            const checkConclusion = () => {
-              if (process.env.VALIDATE_EXIT !== '0') return 'failure';
-              if (process.env.FMT_EXIT !== '0') return 'failure';
-              if (process.env.TFLINT_EXIT !== '0') return 'failure';
-              return 'success';
+            const checkName = 'Terraform Validation';
+            const sha = context.eventName === 'pull_request' 
+              ? context.payload.pull_request.head.sha 
+              : context.sha;
+            
+            const results = {
+              fmt: process.env.FMT_EXIT === '0' ? '✅' : '❌',
+              validate: process.env.VALIDATE_EXIT === '0' ? '✅' : '❌',
+              tflint: process.env.TFLINT_EXIT === '0' ? '✅' : '❌'
             };
 
-            const formatStatus = (step, exit_code) => {
-              return exit_code === '0' 
-                ? `✅ ${step} passed`
-                : `❌ ${step} failed`;
-            };
+            const summary = `
+            ### Terraform Validation Results
+            
+            | Check | Status |
+            |-------|--------|
+            | Format | ${results.fmt} |
+            | Validate | ${results.validate} |
+            | TFLint | ${results.tflint} |
 
-            const summary = [
-              `### Terraform Validation Results`,
-              '',
-              formatStatus('Terraform Format', process.env.FMT_EXIT),
-              formatStatus('Terraform Validate', process.env.VALIDATE_EXIT),
-              formatStatus('TFLint', process.env.TFLINT_EXIT),
-              '',
-              process.env.TFLINT_OUTPUT ? '### TFLint Output\n```\n' + process.env.TFLINT_OUTPUT + '\n```' : '',
-            ].join('\n');
+            ${process.env.TFLINT_OUTPUT ? '### TFLint Output\n```\n' + process.env.TFLINT_OUTPUT + '\n```' : ''}
+            `;
+
+            const conclusion = Object.values(results).includes('❌') ? 'failure' : 'success';
 
             await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              name: 'Terraform Validation',
-              head_sha: context.payload.pull_request.head.sha,
+              name: checkName,
+              head_sha: sha,
               status: 'completed',
-              conclusion: checkConclusion(),
+              conclusion: conclusion,
               output: {
                 title: 'Terraform Validation Results',
                 summary: summary
               }
             });
         env:
-          VALIDATE_EXIT: ${{ steps.validate.outcome == 'success' && '0' || '1' }}
           FMT_EXIT: ${{ steps.fmt.outcome == 'success' && '0' || '1' }}
+          VALIDATE_EXIT: ${{ steps.validate.outcome == 'success' && '0' || '1' }}
           TFLINT_EXIT: ${{ steps.tflint.outputs.exit_code }}
           TFLINT_OUTPUT: ${{ steps.tflint.outputs.output }}
 
+      # Добавляем комментарий только для PR
       - name: Add PR Comment
-        if: github.event_name == 'pull_request' && (steps.tflint.outputs.has_warnings == 'true' || steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure')
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const formatError = (step, outcome) => {
-              return outcome === 'success' 
-                ? `✅ ${step} passed`
-                : `❌ ${step} failed`;
+            const results = {
+              fmt: process.env.FMT_EXIT === '0' ? '✅' : '❌',
+              validate: process.env.VALIDATE_EXIT === '0' ? '✅' : '❌',
+              tflint: process.env.TFLINT_EXIT === '0' ? '✅' : '❌'
             };
 
-            let prComment = `## Terraform Changes Review
+            const comment = `## Terraform Validation Results
 
-            ### 🔍 Validation Results
-            ${formatError('Terraform Format', process.env.FMT_OUTCOME)}
-            ${formatError('Terraform Validate', process.env.VALIDATE_OUTCOME)}
-            ${formatError('TFLint', process.env.TFLINT_OUTCOME)}`;
+            | Check | Status |
+            |-------|--------|
+            | Format | ${results.fmt} |
+            | Validate | ${results.validate} |
+            | TFLint | ${results.tflint} |
 
-            if (process.env.HAS_WARNINGS === 'true') {
-              prComment += `\n\n### ⚠️ TFLint Warnings\n\n${process.env.TFLINT_WARNINGS}\n\n`;
-            }
+            ${process.env.HAS_WARNINGS === 'true' ? '### ⚠️ TFLint Warnings\n\n' + process.env.TFLINT_WARNINGS : ''}
 
-            prComment += '\n\n**Note:** Please fix any failed checks before merging.';
+            ${Object.values(results).includes('❌') ? '\n⛔ **Some checks failed. Please fix the issues before merging.**' : '✅ All checks passed!'}`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: prComment
+              body: comment
             });
         env:
-          FMT_OUTCOME: ${{ steps.fmt.outcome }}
-          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
-          TFLINT_OUTCOME: ${{ steps.tflint.outcome }}
+          FMT_EXIT: ${{ steps.fmt.outcome == 'success' && '0' || '1' }}
+          VALIDATE_EXIT: ${{ steps.validate.outcome == 'success' && '0' || '1' }}
+          TFLINT_EXIT: ${{ steps.tflint.outputs.exit_code }}
           HAS_WARNINGS: ${{ steps.tflint.outputs.has_warnings }}
           TFLINT_WARNINGS: ${{ steps.tflint.outputs.warnings }}
