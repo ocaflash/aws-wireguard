@@ -7,7 +7,6 @@ on:
     paths:
       - '**.tf'
       - '**.tfvars'
-      - '.github/workflows/terraform-validate.yml'
 
 # Add concurrency to prevent parallel runs on the same ref
 concurrency:
