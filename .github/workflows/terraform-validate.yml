@@ -1,11 +1,11 @@
 name: "Terraform Validation"
 
 on:
+  push:
+    branches: [master]
   pull_request:
     types: [ opened, synchronize, reopened ]
-    paths:
-      - '**.tf'
-      - '**.tfvars'
+    branches: [master]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
