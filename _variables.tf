@@ -17,7 +17,7 @@ variable "iam_role_name" {
 }
 
 variable "iam_role_path" {
-  type        = string
+
   description = "IAM role path"
   default     = "/"
 }
@@ -32,7 +32,7 @@ variable "iam_role_policy_attachment" {
 }
 
 variable "ip_address_int" {
-
+  type        = string
   description = "IP address for Wireguard interface"
   default     = "192.168.10.2"
 }
