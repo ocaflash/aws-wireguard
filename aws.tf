@@ -26,6 +26,7 @@ provider "aws" {
     tags = {
       Project     = "WireGuard VPN"
       ProjectUUID = random_id.project_uuid.hex
+
     }
   }
 }
