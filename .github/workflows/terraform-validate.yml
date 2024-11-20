@@ -1,6 +1,12 @@
-name: "Terraform Validation and PR Management"
+name: "Terraform Validation"
 
 on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**.tf'
+      - '**.tfvars'
   push:
     branches-ignore:
       - master
@@ -20,10 +26,6 @@ jobs:
   terraform-checks:
     name: "Terraform Validation"
     runs-on: ubuntu-latest
-
-    outputs:
-      tflint_warnings: ${{ steps.tflint.outputs.warnings }}
-      has_warnings: ${{ steps.tflint.outputs.has_warnings }}
 
     permissions:
       contents: read
@@ -52,7 +54,7 @@ jobs:
       - name: Run TFLint
         id: tflint
         shell: bash
-        continue-on-error: true  # Allow the workflow to continue even if TFLint finds issues
+        continue-on-error: true
         run: |
           set +e
           TFLINT_OUTPUT=$(tflint)
@@ -93,11 +95,11 @@ jobs:
             echo "has_warnings=false" >> "$GITHUB_OUTPUT"
           fi
 
-          # We don't exit with error code even if TFLint found issues
           exit 0
 
       - name: Terraform Format
         run: terraform fmt -check
+        if: github.event_name == 'pull_request'
 
       - name: Terraform Init
         run: terraform init
@@ -105,96 +107,30 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-  create-pull-request:
-    name: "PR Management"
-    runs-on: ubuntu-latest
-    if: success()
-    needs: terraform-checks
-    permissions:
-      contents: write
-      pull-requests: write
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Prepare PR Content
-        id: prepare_pr
-        run: |
-          pr_body="## Terraform Changes Review\n\n"
-          pr_body+="### 🔍 Validation Results\n"
-          pr_body+="- ✅ Terraform configuration validated\n"
-          pr_body+="- ✅ CI checks completed\n\n"
-          
-          if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
-            pr_body+="### ⚠️ TFLint Warnings (Non-Critical)\n\n"
-            pr_body+="The following warnings were found but are not blocking the deployment:\n\n"
-            pr_body+="${{ needs.terraform-checks.outputs.tflint_warnings }}\n\n"
-            pr_body+="**Note:** These warnings are informational and do not prevent merging.\n"
-          fi
-          
-          echo "pr_body<<EOF" >> $GITHUB_ENV
-          echo -e "$pr_body" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Check Existing PR
-        id: check_pr
+      - name: Add PR Comment
+        if: github.event_name == 'pull_request' && steps.tflint.outputs.has_warnings == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            try {
-              const pullRequests = await github.rest.pulls.list({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: "open",
-                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
-              });
-              if (pullRequests.data.length > 0) {
-                core.setOutput("pr_exists", "true");
-                core.setOutput("pr_number", pullRequests.data[0].number);
-              } else {
-                core.setOutput("pr_exists", "false");
-              }
-            } catch (error) {
-              core.setFailed(`Failed to check for existing PR: ${error.message}`);
-            }
+            const prBody = `## Terraform Changes Review
 
-      - name: Update Existing PR
-        if: steps.check_pr.outputs.pr_exists == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            try {
-              await github.rest.pulls.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: parseInt(process.env.PR_NUMBER, 10),
-                body: process.env.pr_body,
-              });
-            } catch (error) {
-              core.setFailed(`Failed to update PR: ${error.message}`);
-            }
+            ### 🔍 Validation Results
+            - ✅ Terraform configuration validated
+            - ✅ CI checks completed
+
+            ### ⚠️ TFLint Warnings (Non-Critical)
+
+            The following warnings were found but are not blocking the deployment:
+
+            ${process.env.TFLINT_WARNINGS}
+
+            **Note:** These warnings are informational and do not prevent merging.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: prBody
+            });
         env:
-          PR_NUMBER: ${{ steps.check_pr.outputs.pr_number }}
-          pr_body: ${{ env.pr_body }}
-
-      - name: Create New PR
-        if: steps.check_pr.outputs.pr_exists == 'false'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            try {
-              const { data: pr } = await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: `Review: Changes in ${context.ref.replace('refs/heads/', '')}`,
-                head: context.ref.replace('refs/heads/', ''),
-                base: "master",
-                body: process.env.pr_body,
-              });
-              core.setOutput("pr_url", pr.html_url);
-            } catch (error) {
-              core.setFailed(`Failed to create PR: ${error.message}`);
-            }
-        env:
-          pr_body: ${{ env.pr_body }}
+          TFLINT_WARNINGS: ${{ steps.tflint.outputs.warnings }}
