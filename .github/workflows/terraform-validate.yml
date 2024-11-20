@@ -7,7 +7,6 @@ on:
     paths:
       - '**.tf'
       - '**.tfvars'
-      - '.github/workflows/terraform-validate.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -109,6 +108,7 @@ jobs:
   create-pull-request:
     name: "PR Management"
     runs-on: ubuntu-latest
+    if: success()
     needs: terraform-checks
     permissions:
       contents: write
