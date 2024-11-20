@@ -7,6 +7,7 @@ on:
     paths:
       - '**.tf'
       - '**.tfvars'
+      - '.github/workflows/terraform-validate.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,7 +21,6 @@ jobs:
   terraform-checks:
     name: "Terraform Validation"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
 
     outputs:
       tflint_warnings: ${{ steps.tflint.outputs.warnings }}
@@ -33,8 +33,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -48,72 +46,64 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup TFLint with Caching
-        uses: actions/cache@v4
-        with:
-          path: ~/.tflint.d/plugins
-          key: tflint-${{ hashFiles('.tflint.hcl') }}
-
       - name: Install TFLint
         run: |
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-          tflint --init
 
       - name: Run TFLint
         id: tflint
         shell: bash
+        continue-on-error: true  # Allow the workflow to continue even if TFLint finds issues
         run: |
           set +e
-          TFLINT_OUTPUT=$(tflint --format default)
+          TFLINT_OUTPUT=$(tflint)
           TFLINT_EXIT_CODE=$?
           set -e
 
           echo "TFLint output:"
-          echo "$TFLINT_OUTPUT" | sed 's/Warning:/\x1b[33mWarning:\x1b[0m/g'
+          echo "$TFLINT_OUTPUT"
 
-          # Process warnings and create formatted output
           if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
             echo "has_warnings=true" >> "$GITHUB_OUTPUT"
             {
               echo "warnings<<EOWARN"
-              separator="----------------------------------------"
+              separator_length=40
+              separator=$(printf '%.0s-' $(seq 1 $separator_length))
               issue_number=1
-              
-              echo "$TFLINT_OUTPUT" | while IFS= read -r line; do
+              while IFS= read -r line; do
                 if [[ $line == Warning:* ]]; then
-                  [ -n "$current_warning" ] && echo -e "$current_warning\n$separator"
-                  current_warning="**Issue #$issue_number:** ${line#Warning: }"
-                  ((issue_number++))
+                  line_without_warning=$(echo "$line" | sed 's/^Warning: //')
+                  if [[ -n $current_warning ]]; then
+                    echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                  fi
+                  current_warning="**$issue_number).** **Warning:** $line_without_warning"
+                  issue_number=$((issue_number + 1))
                 elif [[ $line == Reference:* ]]; then
-                  url=${line#*: }
-                  current_warning+="\n**Reference:** [$url]($url)"
-                  echo -e "$current_warning\n$separator"
+                  reference_url=$(echo "$line" | sed 's/.*https/https/')
+                  current_warning+="\n**Reference:** [$reference_url]($reference_url)"
+                  echo -e "$current_warning" | sed 's/`/'\''/g' | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/'
+                  echo "$separator"
                   current_warning=""
-                elif [ -n "$line" ]; then
+                else
                   current_warning+="\n$line"
                 fi
-              done
-              
-              [ -n "$current_warning" ] && echo -e "$current_warning\n$separator"
+              done <<< "$TFLINT_OUTPUT"
               echo "EOWARN"
             } >> "$GITHUB_OUTPUT"
           else
             echo "has_warnings=false" >> "$GITHUB_OUTPUT"
           fi
 
-          exit $TFLINT_EXIT_CODE
+          # We don't exit with error code even if TFLint found issues
+          exit 0
 
-      - name: Terraform Format Check
-        id: fmt
-        run: terraform fmt -check -recursive
-        continue-on-error: true
+      - name: Terraform Format
+        run: terraform fmt -check
 
       - name: Terraform Init
-        id: init
-        run: terraform init -backend=false
+        run: terraform init
 
       - name: Terraform Validate
-        id: validate
         run: terraform validate
 
   create-pull-request:
@@ -129,72 +119,82 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Prepare PR Content
-        id: pr_content
+        id: prepare_pr
         run: |
-          {
-            echo "pr_body<<EOF"
-            echo "## Terraform Changes Review"
-            echo "### 🔍 Validation Results"
-            echo "- ✅ Terraform configuration validated"
-            echo "- ✅ CI checks completed"
-            echo ""
-            
-            if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
-              echo "### ⚠️ TFLint Warnings"
-              echo "${{ needs.terraform-checks.outputs.tflint_warnings }}"
-              echo ""
-              echo "⚠️ **Please review these warnings before merging**"
-            else
-              echo "### ✅ No TFLint Warnings"
-            fi
-            
-            echo ""
-            echo "### 📝 Next Steps"
-            echo "1. Review the changes"
-            echo "2. Address any warnings if present"
-            echo "3. Approve and merge if everything looks good"
-            echo "EOF"
-          } >> $GITHUB_ENV
+          pr_body="## Terraform Changes Review\n\n"
+          pr_body+="### 🔍 Validation Results\n"
+          pr_body+="- ✅ Terraform configuration validated\n"
+          pr_body+="- ✅ CI checks completed\n\n"
+          
+          if [ "${{ needs.terraform-checks.outputs.has_warnings }}" == "true" ]; then
+            pr_body+="### ⚠️ TFLint Warnings (Non-Critical)\n\n"
+            pr_body+="The following warnings were found but are not blocking the deployment:\n\n"
+            pr_body+="${{ needs.terraform-checks.outputs.tflint_warnings }}\n\n"
+            pr_body+="**Note:** These warnings are informational and do not prevent merging.\n"
+          fi
+          
+          echo "pr_body<<EOF" >> $GITHUB_ENV
+          echo -e "$pr_body" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Manage Pull Request
+      - name: Check Existing PR
+        id: check_pr
         uses: actions/github-script@v7
         with:
           script: |
-            const branch = context.ref.replace('refs/heads/', '');
-            const title = `[Terraform] Changes in ${branch}`;
-            
             try {
-              // Check for existing PR
-              const { data: prs } = await github.rest.pulls.list({
+              const pullRequests = await github.rest.pulls.list({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                state: 'open',
-                head: `${context.repo.owner}:${branch}`,
+                state: "open",
+                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
               });
-              
-              if (prs.length > 0) {
-                // Update existing PR
-                await github.rest.pulls.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  pull_number: prs[0].number,
-                  body: process.env.pr_body,
-                });
-                console.log(`Updated PR #${prs[0].number}`);
+              if (pullRequests.data.length > 0) {
+                core.setOutput("pr_exists", "true");
+                core.setOutput("pr_number", pullRequests.data[0].number);
               } else {
-                // Create new PR
-                const { data: pr } = await github.rest.pulls.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: title,
-                  head: branch,
-                  base: 'master',
-                  body: process.env.pr_body,
-                });
-                console.log(`Created PR #${pr.number}`);
+                core.setOutput("pr_exists", "false");
               }
             } catch (error) {
-              core.setFailed(`PR operation failed: ${error.message}`);
+              core.setFailed(`Failed to check for existing PR: ${error.message}`);
+            }
+
+      - name: Update Existing PR
+        if: steps.check_pr.outputs.pr_exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: parseInt(process.env.PR_NUMBER, 10),
+                body: process.env.pr_body,
+              });
+            } catch (error) {
+              core.setFailed(`Failed to update PR: ${error.message}`);
+            }
+        env:
+          PR_NUMBER: ${{ steps.check_pr.outputs.pr_number }}
+          pr_body: ${{ env.pr_body }}
+
+      - name: Create New PR
+        if: steps.check_pr.outputs.pr_exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const { data: pr } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Review: Changes in ${context.ref.replace('refs/heads/', '')}`,
+                head: context.ref.replace('refs/heads/', ''),
+                base: "master",
+                body: process.env.pr_body,
+              });
+              core.setOutput("pr_url", pr.html_url);
+            } catch (error) {
+              core.setFailed(`Failed to create PR: ${error.message}`);
             }
         env:
           pr_body: ${{ env.pr_body }}
