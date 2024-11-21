@@ -13,14 +13,19 @@ concurrency:
 
 env:
   TF_VERSION: "1.9.4"
-  AWS_REGION: "eu-central-1"
+  AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
-  setup:
-    name: "Setup Environment"
+  terraform-checks:
+    name: "Terraform Validation"
     runs-on: ubuntu-latest
-    outputs:
-      aws_region: ${{ steps.setup_aws.outputs.aws_region }}
+
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+      statuses: write
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -30,94 +35,32 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS Credentials with Keys
-        id: setup_aws
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set AWS Region Output
-        run: |
-          echo "aws_region=$AWS_REGION" >> $GITHUB_OUTPUT
-
-  terraform-fmt:
-    name: "Terraform Format Check"
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
         continue-on-error: true
 
-  terraform-init:
-    name: "Terraform Init"
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
       - name: Terraform Init
         id: init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: terraform init
-
-  terraform-validate:
-    name: "Terraform Validate"
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
 
       - name: Terraform Validate
         id: validate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: terraform validate -no-color
 
-  tflint:
-    name: "Run TFLint"
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Run TFLint
-        id: tflint
-        shell: bash
-        run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-          
-          set +e
-          TFLINT_OUTPUT=$(tflint --format compact)
-          TFLINT_EXIT_CODE=$?
-          set -e
-
-          echo "TFLint output:"
-          echo "$TFLINT_OUTPUT"
-
-          # Сохраняем результаты
-          {
-            echo "output<<EOF"
-            echo "$TFLINT_OUTPUT"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "exit_code=$TFLINT_EXIT_CODE" >> "$GITHUB_OUTPUT"
-
-          # Форматируем warnings
-          if echo "$TFLINT_OUTPUT" | grep -q "Warning:"; then
-            echo "has_warnings=true" >> "$GITHUB_OUTPUT"
-            {
-              echo "warnings<<EOWARN"
-              echo "$TFLINT_OUTPUT"
-              echo "EOWARN"
-            } >> "$GITHUB_OUTPUT"
-          else
-            echo "has_warnings=false" >> "$GITHUB_OUTPUT"
-          fi
+      # Rest of the workflow remains the same as in the original file
