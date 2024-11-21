@@ -37,6 +37,8 @@ jobs:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: Github_to_AWS_via_FederateOIDC
+
+      - name: Set AWS Region Output
         run: |
           echo "aws_region=$AWS_REGION" >> $GITHUB_OUTPUT
 
