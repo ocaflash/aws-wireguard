@@ -30,13 +30,13 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS Credentials with Role
+      - name: Configure AWS Credentials with Keys
         id: setup_aws
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: Github_to_AWS_via_FederateOIDC
 
       - name: Set AWS Region Output
         run: |
