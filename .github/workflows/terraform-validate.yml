@@ -13,19 +13,14 @@ concurrency:
 
 env:
   TF_VERSION: "1.9.4"
-  AWS_REGION: "ap-south-1"
+  AWS_REGION: "eu-central-1"
 
 jobs:
-  terraform-checks:
-    name: "Terraform Validation"
+  setup:
+    name: "Setup Environment"
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: write
-      statuses: write
-
+    outputs:
+      aws_region: ${{ steps.setup_aws.outputs.aws_region }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -35,31 +30,60 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials with Role
+        id: setup_aws
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Debug Event Context
+          role-session-name: Github_to_AWS_via_FederateOIDC
         run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Event type: ${{ github.event.type }}"
-          echo "Reference: ${{ github.ref }}"
+          echo "aws_region=$AWS_REGION" >> $GITHUB_OUTPUT
+
+  terraform-fmt:
+    name: "Terraform Format Check"
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
         continue-on-error: true
 
+  terraform-init:
+    name: "Terraform Init"
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Terraform Init
         id: init
         run: terraform init
 
+  terraform-validate:
+    name: "Terraform Validate"
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
+
+  tflint:
+    name: "Run TFLint"
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Run TFLint
         id: tflint
@@ -95,86 +119,3 @@ jobs:
           else
             echo "has_warnings=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Update Check Status
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const checkName = 'Terraform Validation';
-            const sha = context.eventName === 'pull_request' 
-              ? context.payload.pull_request.head.sha 
-              : context.sha;
-            
-            const results = {
-              fmt: process.env.FMT_EXIT === '0' ? '✅' : '❌',
-              validate: process.env.VALIDATE_EXIT === '0' ? '✅' : '❌',
-              tflint: process.env.TFLINT_EXIT === '0' ? '✅' : '❌'
-            };
-
-            const summary = `
-            ### Terraform Validation Results
-            
-            | Check | Status |
-            |-------|--------|
-            | Format | ${results.fmt} |
-            | Validate | ${results.validate} |
-            | TFLint | ${results.tflint} |
-
-            ${process.env.TFLINT_OUTPUT ? '### TFLint Output\n```\n' + process.env.TFLINT_OUTPUT + '\n```' : ''}
-            `;
-
-            const conclusion = Object.values(results).includes('❌') ? 'failure' : 'success';
-
-            await github.rest.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: checkName,
-              head_sha: sha,
-              status: 'completed',
-              conclusion: conclusion,
-              output: {
-                title: 'Terraform Validation Results',
-                summary: summary
-              }
-            });
-        env:
-          FMT_EXIT: ${{ steps.fmt.outcome == 'success' && '0' || '1' }}
-          VALIDATE_EXIT: ${{ steps.validate.outcome == 'success' && '0' || '1' }}
-          TFLINT_EXIT: ${{ steps.tflint.outputs.exit_code }}
-          TFLINT_OUTPUT: ${{ steps.tflint.outputs.output }}
-
-      - name: Add PR Comment
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const results = {
-              fmt: process.env.FMT_EXIT === '0' ? '✅' : '❌',
-              validate: process.env.VALIDATE_EXIT === '0' ? '✅' : '❌',
-              tflint: process.env.TFLINT_EXIT === '0' ? '✅' : '❌'
-            };
-
-            const comment = `## Terraform Validation Results
-
-            | Check | Status |
-            |-------|--------|
-            | Format | ${results.fmt} |
-            | Validate | ${results.validate} |
-            | TFLint | ${results.tflint} |
-
-            ${process.env.HAS_WARNINGS === 'true' ? '### ⚠️ TFLint Warnings\n\n' + process.env.TFLINT_WARNINGS : ''}
-
-            ${Object.values(results).includes('❌') ? '\n⛔ **Some checks failed. Please fix the issues before merging.**' : '✅ All checks passed!'}`;
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: comment
-            });
-        env:
-          FMT_EXIT: ${{ steps.fmt.outcome == 'success' && '0' || '1' }}
-          VALIDATE_EXIT: ${{ steps.validate.outcome == 'success' && '0' || '1' }}
-          TFLINT_EXIT: ${{ steps.tflint.outputs.exit_code }}
-          HAS_WARNINGS: ${{ steps.tflint.outputs.has_warnings }}
-          TFLINT_WARNINGS: ${{ steps.tflint.outputs.warnings }}
